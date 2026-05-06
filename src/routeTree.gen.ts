@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as QuotationsRouteImport } from './routes/quotations'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as LeadsRouteImport } from './routes/leads'
+import { Route as FollowupsRouteImport } from './routes/followups'
+import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QuotationsRoute = QuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LeadsRoute = LeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FollowupsRoute = FollowupsRouteImport.update({
+  id: '/followups',
+  path: '/followups',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClosuresRoute = ClosuresRouteImport.update({
+  id: '/closures',
+  path: '/closures',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/followups': typeof FollowupsRoute
+  '/leads': typeof LeadsRoute
+  '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/followups': typeof FollowupsRoute
+  '/leads': typeof LeadsRoute
+  '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/followups': typeof FollowupsRoute
+  '/leads': typeof LeadsRoute
+  '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/closures'
+    | '/followups'
+    | '/leads'
+    | '/pipeline'
+    | '/quotations'
+    | '/reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/closures'
+    | '/followups'
+    | '/leads'
+    | '/pipeline'
+    | '/quotations'
+    | '/reports'
+  id:
+    | '__root__'
+    | '/'
+    | '/closures'
+    | '/followups'
+    | '/leads'
+    | '/pipeline'
+    | '/quotations'
+    | '/reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ClosuresRoute: typeof ClosuresRoute
+  FollowupsRoute: typeof FollowupsRoute
+  LeadsRoute: typeof LeadsRoute
+  PipelineRoute: typeof PipelineRoute
+  QuotationsRoute: typeof QuotationsRoute
+  ReportsRoute: typeof ReportsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quotations': {
+      id: '/quotations'
+      path: '/quotations'
+      fullPath: '/quotations'
+      preLoaderRoute: typeof QuotationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/leads': {
+      id: '/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof LeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/followups': {
+      id: '/followups'
+      path: '/followups'
+      fullPath: '/followups'
+      preLoaderRoute: typeof FollowupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/closures': {
+      id: '/closures'
+      path: '/closures'
+      fullPath: '/closures'
+      preLoaderRoute: typeof ClosuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,16 +177,13 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ClosuresRoute: ClosuresRoute,
+  FollowupsRoute: FollowupsRoute,
+  LeadsRoute: LeadsRoute,
+  PipelineRoute: PipelineRoute,
+  QuotationsRoute: QuotationsRoute,
+  ReportsRoute: ReportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
