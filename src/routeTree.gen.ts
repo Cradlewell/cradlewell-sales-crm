@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as QuotationsRouteImport } from './routes/quotations'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LeadsRouteImport } from './routes/leads'
 import { Route as FollowupsRouteImport } from './routes/followups'
 import { Route as IndexRouteImport } from './routes/index'
 
+const QuotationsRoute = QuotationsRouteImport.update({
+  id: '/quotations',
+  path: '/quotations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PipelineRoute = PipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
@@ -40,12 +46,14 @@ export interface FileRoutesByFullPath {
   '/followups': typeof FollowupsRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/followups': typeof FollowupsRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/followups': typeof FollowupsRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
+  '/quotations': typeof QuotationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/followups' | '/leads' | '/pipeline'
+  fullPaths: '/' | '/followups' | '/leads' | '/pipeline' | '/quotations'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/followups' | '/leads' | '/pipeline'
-  id: '__root__' | '/' | '/followups' | '/leads' | '/pipeline'
+  to: '/' | '/followups' | '/leads' | '/pipeline' | '/quotations'
+  id: '__root__' | '/' | '/followups' | '/leads' | '/pipeline' | '/quotations'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,10 +76,18 @@ export interface RootRouteChildren {
   FollowupsRoute: typeof FollowupsRoute
   LeadsRoute: typeof LeadsRoute
   PipelineRoute: typeof PipelineRoute
+  QuotationsRoute: typeof QuotationsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/quotations': {
+      id: '/quotations'
+      path: '/quotations'
+      fullPath: '/quotations'
+      preLoaderRoute: typeof QuotationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pipeline': {
       id: '/pipeline'
       path: '/pipeline'
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   FollowupsRoute: FollowupsRoute,
   LeadsRoute: LeadsRoute,
   PipelineRoute: PipelineRoute,
+  QuotationsRoute: QuotationsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
