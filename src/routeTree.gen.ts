@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as QuotationsRouteImport } from './routes/quotations'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LeadsRouteImport } from './routes/leads'
@@ -16,6 +17,11 @@ import { Route as FollowupsRouteImport } from './routes/followups'
 import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuotationsRoute = QuotationsRouteImport.update({
   id: '/quotations',
   path: '/quotations',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
+  '/reports': typeof ReportsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,8 +90,16 @@ export interface FileRouteTypes {
     | '/leads'
     | '/pipeline'
     | '/quotations'
+    | '/reports'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/closures' | '/followups' | '/leads' | '/pipeline' | '/quotations'
+  to:
+    | '/'
+    | '/closures'
+    | '/followups'
+    | '/leads'
+    | '/pipeline'
+    | '/quotations'
+    | '/reports'
   id:
     | '__root__'
     | '/'
@@ -91,6 +108,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/pipeline'
     | '/quotations'
+    | '/reports'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -100,10 +118,18 @@ export interface RootRouteChildren {
   LeadsRoute: typeof LeadsRoute
   PipelineRoute: typeof PipelineRoute
   QuotationsRoute: typeof QuotationsRoute
+  ReportsRoute: typeof ReportsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quotations': {
       id: '/quotations'
       path: '/quotations'
@@ -156,6 +182,7 @@ const rootRouteChildren: RootRouteChildren = {
   LeadsRoute: LeadsRoute,
   PipelineRoute: PipelineRoute,
   QuotationsRoute: QuotationsRoute,
+  ReportsRoute: ReportsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
