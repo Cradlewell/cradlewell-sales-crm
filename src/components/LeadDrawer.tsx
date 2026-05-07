@@ -159,10 +159,21 @@ export function LeadDrawer({
                 <Info label="Service" value={lead.serviceRequired} />
                 <Info label="Baby" value={`${lead.babyStatus} · ${lead.babyAgeOrMonth ?? "-"}`} />
                 <Info label="Hospital" value={lead.hospitalName ?? "-"} />
+                <Info label="Birth stage / status" value={lead.babyBirthStageStatus ?? "-"} />
+                <Info label="Baby age" value={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} />
+                <Info label="Current weight" value={lead.currentWeight ?? "-"} />
                 <Info label="Area" value={lead.area ?? "-"} />
                 <Info label="City" value={lead.city ?? "-"} />
+                <Info label="Address" value={lead.address ?? "-"} />
                 <Info label="Shift" value={lead.preferredShift ?? "-"} />
+                <Info label="Shift hours" value={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} />
+                <Info label="Shift time" value={lead.shiftTime ?? "-"} />
+                <Info label="Care start date" value={lead.careStartDate ? format(new Date(lead.careStartDate), "PP") : "-"} />
+                <Info label="Service days" value={lead.serviceDays ? `${lead.serviceDays} days` : "-"} />
                 <Info label="Budget" value={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} />
+                <Info label="Lead date" value={format(new Date(lead.leadDate ?? lead.createdAt), "PP")} />
+                <Info label="Lead time" value={format(new Date(lead.leadDate ?? lead.createdAt), "p")} />
+                <Info label="Lead day" value={format(new Date(lead.leadDate ?? lead.createdAt), "EEEE")} />
               </div>
               <div>
                 <Label className="text-xs">Requirement notes</Label>
