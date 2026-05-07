@@ -1,24 +1,28 @@
 export type LeadStage =
   | "New Lead"
+  | "Not Responding"
   | "Contacted"
-  | "Requirement Understood"
-  | "Quotation Shared"
-  | "Follow-up Scheduled"
+  | "Nurse Required"
+  | "Moba Required"
+  | "Due date soon"
+  | "Follow-up"
   | "Negotiation"
-  | "Payment Pending"
   | "Closed Won"
-  | "Closed Lost";
+  | "Closed Lost"
+  | "Invalid Lead";
 
 export const LEAD_STAGES: LeadStage[] = [
   "New Lead",
+  "Not Responding",
   "Contacted",
-  "Requirement Understood",
-  "Quotation Shared",
-  "Follow-up Scheduled",
+  "Nurse Required",
+  "Moba Required",
+  "Due date soon",
+  "Follow-up",
   "Negotiation",
-  "Payment Pending",
   "Closed Won",
   "Closed Lost",
+  "Invalid Lead",
 ];
 
 export type LeadTemperature = "Cold" | "Warm" | "Hot";

@@ -3,14 +3,16 @@ import type { LeadStage, LeadTemperature } from "@/lib/types";
 
 const stageStyles: Record<LeadStage, string> = {
   "New Lead": "bg-primary/10 text-primary",
+  "Not Responding": "bg-muted text-muted-foreground",
   Contacted: "bg-accent text-accent-foreground",
-  "Requirement Understood": "bg-accent text-accent-foreground",
-  "Quotation Shared": "bg-secondary/15 text-secondary",
-  "Follow-up Scheduled": "bg-warning/15 text-warning-foreground",
+  "Nurse Required": "bg-secondary/15 text-secondary",
+  "Moba Required": "bg-secondary/15 text-secondary",
+  "Due date soon": "bg-warning/15 text-warning-foreground",
+  "Follow-up": "bg-warning/15 text-warning-foreground",
   Negotiation: "bg-warning/20 text-warning-foreground",
-  "Payment Pending": "bg-destructive/10 text-destructive",
   "Closed Won": "bg-success/15 text-success",
   "Closed Lost": "bg-muted text-muted-foreground",
+  "Invalid Lead": "bg-destructive/10 text-destructive",
 };
 
 export function StageBadge({ stage }: { stage: LeadStage }) {
