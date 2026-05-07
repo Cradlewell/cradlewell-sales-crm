@@ -380,11 +380,46 @@ export function LeadDrawer({
   );
 }
 
-function Info({ label, value }: { label: string; value: React.ReactNode }) {
+function Info({
+  label,
+  value,
+  icon,
+  full,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon?: React.ReactNode;
+  full?: boolean;
+}) {
   return (
-    <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium">{value}</div>
+    <div className={full ? "sm:col-span-2" : undefined}>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+        {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+        <span className="truncate">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+          {icon}
+        </span>
+        {title}
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-sm">{children}</div>
     </div>
   );
 }
