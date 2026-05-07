@@ -10,7 +10,7 @@ import type {
   Quotation,
 } from "./types";
 
-const KEY = "cradlewell-crm-v1";
+const KEY = "cradlewell-crm-v2";
 
 interface DB {
   leads: Lead[];
