@@ -125,9 +125,9 @@ function ReportsPage() {
           </div>
         </Card>
         <Card className="p-4">
-          <h3 className="mb-3 text-sm font-semibold">Payment pending</h3>
+          <h3 className="mb-3 text-sm font-semibold">Follow-up</h3>
           <div className="space-y-2">
-            {leads.filter((l) => l.stage === "Payment Pending").map((l) => (
+            {leads.filter((l) => l.stage === "Follow-up").map((l) => (
               <div key={l.id} className="flex items-center justify-between rounded-lg border p-2 text-sm">
                 <div>
                   <div className="font-medium">{l.name}</div>
@@ -136,8 +136,8 @@ function ReportsPage() {
                 <span className="text-xs font-semibold text-destructive">Reminder daily</span>
               </div>
             ))}
-            {leads.filter((l) => l.stage === "Payment Pending").length === 0 && (
-              <p className="text-sm text-muted-foreground">No payment pending.</p>
+            {leads.filter((l) => l.stage === "Follow-up").length === 0 && (
+              <p className="text-sm text-muted-foreground">No follow-ups.</p>
             )}
           </div>
         </Card>

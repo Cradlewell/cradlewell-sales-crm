@@ -1,4 +1,7 @@
 import * as React from "react";
+import {
+  LEAD_STAGES,
+} from "./types";
 import type {
   ActivityLog,
   Closure,
@@ -7,7 +10,7 @@ import type {
   Quotation,
 } from "./types";
 
-const KEY = "cradlewell-crm-v1";
+const KEY = "cradlewell-crm-v2";
 
 interface DB {
   leads: Lead[];
@@ -30,17 +33,7 @@ function seed(): DB {
   const sources = ["Website", "Instagram", "Referral", "Google Ads", "Hospital Partner"] as const;
   const services = ["Newborn Care", "Postnatal Care", "Lactation Support", "Night Nanny"];
   const cities = ["Bangalore", "Hyderabad", "Mumbai", "Pune", "Chennai"];
-  const stages = [
-    "New Lead",
-    "Contacted",
-    "Requirement Understood",
-    "Quotation Shared",
-    "Follow-up Scheduled",
-    "Negotiation",
-    "Payment Pending",
-    "Closed Won",
-    "Closed Lost",
-  ] as const;
+  const stages = LEAD_STAGES;
 
   const now = Date.now();
   const leads: Lead[] = Array.from({ length: 14 }).map((_, i) => {
@@ -100,7 +93,7 @@ function seed(): DB {
 
   const quotations: Quotation[] = leads
     .filter((l) =>
-      ["Quotation Shared", "Negotiation", "Payment Pending", "Closed Won"].includes(l.stage),
+      ["Negotiation", "Closed Won"].includes(l.stage),
     )
     .map((l, i) => ({
       id: uid(),
@@ -231,7 +224,7 @@ export const api = {
       ),
     }));
     if (before) logActivity(id, "stage", `Stage: ${before.stage} → ${stage}`);
-    if (stage === "Quotation Shared") {
+    if (stage === "Negotiation") {
       api.addFollowup({
         leadId: id,
         type: "Quotation reminder",

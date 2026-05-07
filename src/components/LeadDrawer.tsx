@@ -392,7 +392,7 @@ function QuotationForm({ leadId }: { leadId: string }) {
             date: new Date().toISOString(),
             notes,
           });
-          api.moveStage(leadId, "Quotation Shared");
+          api.moveStage(leadId, "Negotiation");
           toast.success("Quotation saved");
         }}
       >
