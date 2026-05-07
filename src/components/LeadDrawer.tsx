@@ -39,6 +39,15 @@ import {
   AlarmClock,
   Trophy,
   X,
+  User,
+  Baby,
+  Briefcase,
+  MapPin,
+  Clock,
+  CalendarDays,
+  Stethoscope,
+  IndianRupee,
+  Sparkles,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -89,12 +98,34 @@ export function LeadDrawer({
         <SheetHeader className="border-b bg-[image:var(--gradient-brand)] p-5 text-primary-foreground">
           <SheetTitle className="text-primary-foreground">
             <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-xs opacity-80">{lead.id}</div>
-                <div className="mt-0.5 text-xl font-semibold">{lead.name}</div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs opacity-90">
-                  <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />{lead.phone}</span>
-                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" />{lead.whatsapp}</span>
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-lg font-semibold uppercase ring-2 ring-white/30">
+                  {lead.name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 text-[11px] opacity-80">
+                    <span className="rounded bg-white/15 px-1.5 py-0.5 font-medium tracking-wide">{lead.id}</span>
+                    <span>· {lead.source}</span>
+                  </div>
+                  <div className="mt-1 text-xl font-semibold leading-tight">{lead.name}</div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-95">
+                    <a
+                      href={`tel:${lead.phone}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 font-medium hover:bg-white/25"
+                    >
+                      <Phone className="h-3 w-3" /> {lead.phone}
+                    </a>
+                    <a
+                      href={`https://wa.me/${lead.whatsapp.replace(/[^0-9]/g, "")}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 font-medium hover:bg-white/25"
+                    >
+                      <MessageCircle className="h-3 w-3" /> WhatsApp
+                    </a>
+                  </div>
                 </div>
               </div>
               <button onClick={onClose} className="rounded-md p-1 hover:bg-white/15">
@@ -102,19 +133,26 @@ export function LeadDrawer({
               </button>
             </div>
           </SheetTitle>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-medium">
+              <Sparkles className="h-3 w-3" /> {lead.stage}
+            </span>
+            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
+              {lead.temperature} lead
+            </span>
+            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
+              Owner: {lead.owner}
+            </span>
+            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
+              {lead.closureProbability ?? 0}% close prob.
+            </span>
+          </div>
         </SheetHeader>
 
         <div className="space-y-4 p-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <StageBadge stage={lead.stage} />
-            <TempBadge temp={lead.temperature} />
-            <span className="text-xs text-muted-foreground">Owner: {lead.owner}</span>
-            <span className="text-xs text-muted-foreground">· {lead.closureProbability ?? 0}% prob.</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border bg-muted/40 p-3 sm:grid-cols-3">
             <div>
-              <Label className="text-xs">Stage</Label>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</Label>
               <Select value={lead.stage} onValueChange={(v) => api.moveStage(lead.id, v as never)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -123,7 +161,7 @@ export function LeadDrawer({
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Temperature</Label>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Temperature</Label>
               <Select
                 value={lead.temperature}
                 onValueChange={(v) => api.updateLead(lead.id, { temperature: v as LeadTemperature })}
@@ -135,7 +173,7 @@ export function LeadDrawer({
               </Select>
             </div>
             <div>
-              <Label className="text-xs">Closure %</Label>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Closure %</Label>
               <Input
                 type="number"
                 value={lead.closureProbability ?? 0}
@@ -154,27 +192,39 @@ export function LeadDrawer({
             </TabsList>
 
             <TabsContent value="profile" className="space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <Section icon={<User className="h-4 w-4" />} title="Lead info">
+                <Info label="Name" value={lead.name} />
+                <Info label="Phone" value={lead.phone} />
                 <Info label="Source" value={lead.source} />
-                <Info label="Service" value={lead.serviceRequired} />
-                <Info label="Baby" value={`${lead.babyStatus} · ${lead.babyAgeOrMonth ?? "-"}`} />
-                <Info label="Hospital" value={lead.hospitalName ?? "-"} />
+                <Info label="Lead date" value={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy")} />
+                <Info label="Lead time" value={format(new Date(lead.leadDate ?? lead.createdAt), "p")} />
+                <Info label="Lead day" value={format(new Date(lead.leadDate ?? lead.createdAt), "EEEE")} />
+              </Section>
+
+              <Section icon={<Baby className="h-4 w-4" />} title="Baby details">
+                <Info label="Status" value={lead.babyStatus} />
+                <Info label="Hospital" value={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} />
                 <Info label="Birth stage / status" value={lead.babyBirthStageStatus ?? "-"} />
                 <Info label="Baby age" value={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} />
                 <Info label="Current weight" value={lead.currentWeight ?? "-"} />
+              </Section>
+
+              <Section icon={<Briefcase className="h-4 w-4" />} title="Service & shift">
+                <Info label="Service" value={lead.serviceRequired} />
+                <Info label="Shift type" value={lead.preferredShift ?? "-"} />
+                <Info label="Shift hours" value={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} icon={<Clock className="h-3 w-3" />} />
+                <Info label="Shift time" value={lead.shiftTime ?? "-"} />
+                <Info label="Care start date" value={lead.careStartDate ? format(new Date(lead.careStartDate), "dd MMM yyyy") : "-"} icon={<CalendarDays className="h-3 w-3" />} />
+                <Info label="Service days" value={lead.serviceDays ? `${lead.serviceDays} days` : "-"} />
+                <Info label="Budget" value={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} icon={<IndianRupee className="h-3 w-3" />} />
+              </Section>
+
+              <Section icon={<MapPin className="h-4 w-4" />} title="Location">
                 <Info label="Area" value={lead.area ?? "-"} />
                 <Info label="City" value={lead.city ?? "-"} />
-                <Info label="Address" value={lead.address ?? "-"} />
-                <Info label="Shift" value={lead.preferredShift ?? "-"} />
-                <Info label="Shift hours" value={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} />
-                <Info label="Shift time" value={lead.shiftTime ?? "-"} />
-                <Info label="Care start date" value={lead.careStartDate ? format(new Date(lead.careStartDate), "PP") : "-"} />
-                <Info label="Service days" value={lead.serviceDays ? `${lead.serviceDays} days` : "-"} />
-                <Info label="Budget" value={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} />
-                <Info label="Lead date" value={format(new Date(lead.leadDate ?? lead.createdAt), "PP")} />
-                <Info label="Lead time" value={format(new Date(lead.leadDate ?? lead.createdAt), "p")} />
-                <Info label="Lead day" value={format(new Date(lead.leadDate ?? lead.createdAt), "EEEE")} />
-              </div>
+                <Info label="Address" value={lead.address ?? "-"} full />
+              </Section>
+
               <div>
                 <Label className="text-xs">Requirement notes</Label>
                 <Textarea
@@ -330,11 +380,46 @@ export function LeadDrawer({
   );
 }
 
-function Info({ label, value }: { label: string; value: React.ReactNode }) {
+function Info({
+  label,
+  value,
+  icon,
+  full,
+}: {
+  label: string;
+  value: React.ReactNode;
+  icon?: React.ReactNode;
+  full?: boolean;
+}) {
   return (
-    <div>
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div className="font-medium">{value}</div>
+    <div className={full ? "sm:col-span-2" : undefined}>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-foreground">
+        {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+        <span className="truncate">{value}</span>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
+          {icon}
+        </span>
+        {title}
+      </div>
+      <div className="grid grid-cols-2 gap-3 text-sm">{children}</div>
     </div>
   );
 }
