@@ -45,7 +45,13 @@ function LeadsPage() {
   });
 
   const exportCSV = () => {
-    const headers = ["id","name","phone","whatsapp","source","stage","temperature","owner","city","budget","createdAt"];
+    const headers = [
+      "id","name","phone","whatsapp","source","stage","temperature","owner",
+      "serviceRequired","babyStatus","hospitalName","babyBirthStageStatus",
+      "babyAge","babyAgeOrMonth","currentWeight","area","city","address",
+      "preferredShift","shiftHoursCount","shiftTime","careStartDate","serviceDays",
+      "budget","leadDate","createdAt",
+    ];
     const csv = [
       headers.join(","),
       ...rows.map((l) => headers.map((h) => JSON.stringify((l as never as Record<string, unknown>)[h] ?? "")).join(",")),
@@ -146,6 +152,10 @@ function LeadsPage() {
                 <th className="px-3 py-2 hidden lg:table-cell">Source</th>
                 <th className="px-3 py-2 hidden md:table-cell">Owner</th>
                 <th className="px-3 py-2 hidden lg:table-cell">Temp</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Baby</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Shift</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Care start</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Days</th>
                 <th className="px-3 py-2 hidden xl:table-cell">Flags</th>
               </tr>
             </thead>
@@ -158,13 +168,36 @@ function LeadsPage() {
                 >
                   <td className="px-3 py-2">
                     <div className="font-medium">{l.name}</div>
-                    <div className="text-xs text-muted-foreground">{l.id} · {l.serviceRequired}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {l.id} · {l.serviceRequired}
+                      {l.area || l.city ? ` · ${[l.area, l.city].filter(Boolean).join(", ")}` : ""}
+                    </div>
                   </td>
                   <td className="px-3 py-2 hidden md:table-cell">{l.phone}</td>
                   <td className="px-3 py-2"><StageBadge stage={l.stage as LeadStage} /></td>
                   <td className="px-3 py-2 hidden lg:table-cell">{l.source}</td>
                   <td className="px-3 py-2 hidden md:table-cell">{l.owner}</td>
                   <td className="px-3 py-2 hidden lg:table-cell"><TempBadge temp={l.temperature as LeadTemperature} /></td>
+                  <td className="px-3 py-2 hidden lg:table-cell">
+                    <div>{l.babyStatus}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {l.babyAge || l.babyAgeOrMonth || "-"}
+                      {l.currentWeight ? ` · ${l.currentWeight}` : ""}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 hidden xl:table-cell">
+                    <div>{l.preferredShift ?? "-"}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {l.shiftHoursCount ? `${l.shiftHoursCount}h` : ""}
+                      {l.shiftTime ? ` · ${l.shiftTime}` : ""}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2 hidden xl:table-cell">
+                    {l.careStartDate ? new Date(l.careStartDate).toLocaleDateString() : "-"}
+                  </td>
+                  <td className="px-3 py-2 hidden xl:table-cell">
+                    {l.serviceDays ? `${l.serviceDays}` : "-"}
+                  </td>
                   <td className="px-3 py-2 hidden xl:table-cell">
                     <div className="flex gap-1">
                       {isUrgentNew(l) && (
@@ -182,7 +215,7 @@ function LeadsPage() {
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
+                <tr><td colSpan={11} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
               )}
             </tbody>
           </table>
