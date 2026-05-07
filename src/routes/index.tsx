@@ -29,8 +29,8 @@ function Index() {
   const dueToday = followups.filter((f) => !f.completed && isToday(f.dueAt)).length;
   const overdue = followups.filter((f) => !f.completed && isOverdue(f.dueAt) && !isToday(f.dueAt)).length;
   const hot = leads.filter((l) => l.temperature === "Hot" && !["Closed Won","Closed Lost"].includes(l.stage)).length;
-  const quoted = leads.filter((l) => ["Quotation Shared","Negotiation","Payment Pending"].includes(l.stage)).length;
-  const paymentPending = leads.filter((l) => l.stage === "Payment Pending").length;
+  const quoted = leads.filter((l) => ["Negotiation"].includes(l.stage)).length;
+  const followUp = leads.filter((l) => l.stage === "Follow-up").length;
   const won = leads.filter((l) => l.stage === "Closed Won").length;
   const lost = leads.filter((l) => l.stage === "Closed Lost").length;
   const monthRevenue = db.closures
@@ -43,8 +43,8 @@ function Index() {
     { label: "Follow-ups today", value: dueToday, icon: CalendarClock, color: "text-warning-foreground" },
     { label: "Overdue", value: overdue, icon: AlertTriangle, color: "text-destructive" },
     { label: "Hot leads", value: hot, icon: Flame, color: "text-hot" },
-    { label: "Quotations shared", value: quoted, icon: FileText, color: "text-primary" },
-    { label: "Payment pending", value: paymentPending, icon: CreditCard, color: "text-destructive" },
+    { label: "In negotiation", value: quoted, icon: FileText, color: "text-primary" },
+    { label: "Follow-up", value: followUp, icon: CreditCard, color: "text-warning-foreground" },
     { label: "Closed won", value: won, icon: Trophy, color: "text-success" },
     { label: "Closed lost", value: lost, icon: XCircle, color: "text-muted-foreground" },
   ];
