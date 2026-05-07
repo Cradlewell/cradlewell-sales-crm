@@ -204,7 +204,7 @@ function LeadsPage() {
                     <td className="px-3 py-2 hidden xl:table-cell">{l.babyAge ?? l.babyAgeOrMonth ?? "-"}</td>
                     <td className="px-3 py-2 hidden xl:table-cell">{l.currentWeight ?? "-"}</td>
                     <td className="px-3 py-2 hidden xl:table-cell max-w-[220px] truncate">
-                      {l.address ?? [l.area, l.city].filter(Boolean).join(", ") || "-"}
+                      {l.address || [l.area, l.city].filter(Boolean).join(", ") || "-"}
                     </td>
                     <td className="px-3 py-2 hidden xl:table-cell">{l.preferredShift ?? "-"}</td>
                     <td className="px-3 py-2 hidden xl:table-cell">{l.shiftHoursCount ? `${l.shiftHoursCount}h` : "-"}</td>
