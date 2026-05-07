@@ -127,4 +127,13 @@ export interface Lead {
   whatsappNotes?: string;
   lastActivityAt: string;
   createdAt: string;
+  // Extended capture fields (Website forms / WhatsApp chatbot parity)
+  babyBirthStageStatus?: string; // e.g. Full term, Pre-term, NICU, Normal delivery, C-section
+  babyAge?: string; // e.g. "12 days", "3 weeks"
+  currentWeight?: string; // e.g. "2.8 kg"
+  address?: string; // full address
+  shiftHoursCount?: number; // e.g. 8, 12, 24
+  shiftTime?: string; // e.g. "9:00 AM - 9:00 PM"
+  careStartDate?: string; // ISO date
+  serviceDays?: number; // duration in days
 }
