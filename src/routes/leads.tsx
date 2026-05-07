@@ -17,6 +17,7 @@ import { LeadDrawer } from "@/components/LeadDrawer";
 import { LeadFormDialog } from "@/components/LeadFormDialog";
 import { Download, Search, Upload, AlertTriangle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export const Route = createFileRoute("/leads")({
   head: () => ({ meta: [{ title: "Leads — Cradlewell CRM" }] }),
@@ -146,76 +147,77 @@ function LeadsPage() {
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-3 py-2">Lead</th>
-                <th className="px-3 py-2 hidden md:table-cell">Phone</th>
-                <th className="px-3 py-2">Stage</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Source</th>
-                <th className="px-3 py-2 hidden md:table-cell">Owner</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Temp</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Baby</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Shift</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Care start</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Days</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Flags</th>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Phone number</th>
+                <th className="px-3 py-2 hidden md:table-cell">Lead date</th>
+                <th className="px-3 py-2 hidden md:table-cell">Lead time</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Lead day</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Service</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Born / Expecting</th>
+                <th className="px-3 py-2 hidden lg:table-cell">Hospital</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Birth stage / status</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Baby age</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Current weight</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Address</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Shift type</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Shift hours</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Shift time</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Care start date</th>
+                <th className="px-3 py-2 hidden xl:table-cell">Service days</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((l) => (
-                <tr
-                  key={l.id}
-                  onClick={() => setOpenId(l.id)}
-                  className="cursor-pointer border-t hover:bg-muted/30"
-                >
-                  <td className="px-3 py-2">
-                    <div className="font-medium">{l.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {l.id} · {l.serviceRequired}
-                      {l.area || l.city ? ` · ${[l.area, l.city].filter(Boolean).join(", ")}` : ""}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 hidden md:table-cell">{l.phone}</td>
-                  <td className="px-3 py-2"><StageBadge stage={l.stage as LeadStage} /></td>
-                  <td className="px-3 py-2 hidden lg:table-cell">{l.source}</td>
-                  <td className="px-3 py-2 hidden md:table-cell">{l.owner}</td>
-                  <td className="px-3 py-2 hidden lg:table-cell"><TempBadge temp={l.temperature as LeadTemperature} /></td>
-                  <td className="px-3 py-2 hidden lg:table-cell">
-                    <div>{l.babyStatus}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {l.babyAge || l.babyAgeOrMonth || "-"}
-                      {l.currentWeight ? ` · ${l.currentWeight}` : ""}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 hidden xl:table-cell">
-                    <div>{l.preferredShift ?? "-"}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {l.shiftHoursCount ? `${l.shiftHoursCount}h` : ""}
-                      {l.shiftTime ? ` · ${l.shiftTime}` : ""}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 hidden xl:table-cell">
-                    {l.careStartDate ? new Date(l.careStartDate).toLocaleDateString() : "-"}
-                  </td>
-                  <td className="px-3 py-2 hidden xl:table-cell">
-                    {l.serviceDays ? `${l.serviceDays}` : "-"}
-                  </td>
-                  <td className="px-3 py-2 hidden xl:table-cell">
-                    <div className="flex gap-1">
-                      {isUrgentNew(l) && (
-                        <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                          <AlertTriangle className="h-3 w-3" /> Urgent
-                        </span>
-                      )}
-                      {isStale(l) && (
-                        <span className="inline-flex items-center gap-1 rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium">
-                          <Clock className="h-3 w-3" /> Stale
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {rows.map((l) => {
+                const ld = new Date(l.leadDate ?? l.createdAt);
+                return (
+                  <tr
+                    key={l.id}
+                    onClick={() => setOpenId(l.id)}
+                    className="cursor-pointer border-t hover:bg-muted/30"
+                  >
+                    <td className="px-3 py-2">
+                      <div className="font-medium">{l.name}</div>
+                      <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                        <span>{l.id}</span>
+                        <StageBadge stage={l.stage as LeadStage} />
+                        <TempBadge temp={l.temperature as LeadTemperature} />
+                        {isUrgentNew(l) && (
+                          <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                            <AlertTriangle className="h-3 w-3" /> Urgent
+                          </span>
+                        )}
+                        {isStale(l) && (
+                          <span className="inline-flex items-center gap-1 rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium">
+                            <Clock className="h-3 w-3" /> Stale
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">{l.phone}</td>
+                    <td className="px-3 py-2 hidden md:table-cell whitespace-nowrap">{format(ld, "dd MMM yyyy")}</td>
+                    <td className="px-3 py-2 hidden md:table-cell whitespace-nowrap">{format(ld, "p")}</td>
+                    <td className="px-3 py-2 hidden lg:table-cell">{format(ld, "EEEE")}</td>
+                    <td className="px-3 py-2 hidden lg:table-cell">{l.serviceRequired}</td>
+                    <td className="px-3 py-2 hidden lg:table-cell">{l.babyStatus}</td>
+                    <td className="px-3 py-2 hidden lg:table-cell">{l.hospitalName ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.babyBirthStageStatus ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.babyAge ?? l.babyAgeOrMonth ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.currentWeight ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell max-w-[220px] truncate">
+                      {l.address || [l.area, l.city].filter(Boolean).join(", ") || "-"}
+                    </td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.preferredShift ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.shiftHoursCount ? `${l.shiftHoursCount}h` : "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell whitespace-nowrap">{l.shiftTime ?? "-"}</td>
+                    <td className="px-3 py-2 hidden xl:table-cell whitespace-nowrap">
+                      {l.careStartDate ? format(new Date(l.careStartDate), "dd MMM yyyy") : "-"}
+                    </td>
+                    <td className="px-3 py-2 hidden xl:table-cell">{l.serviceDays ?? "-"}</td>
+                  </tr>
+                );
+              })}
               {rows.length === 0 && (
-                <tr><td colSpan={11} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
+                <tr><td colSpan={17} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
               )}
             </tbody>
           </table>
