@@ -45,7 +45,13 @@ function LeadsPage() {
   });
 
   const exportCSV = () => {
-    const headers = ["id","name","phone","whatsapp","source","stage","temperature","owner","city","budget","createdAt"];
+    const headers = [
+      "id","name","phone","whatsapp","source","stage","temperature","owner",
+      "serviceRequired","babyStatus","hospitalName","babyBirthStageStatus",
+      "babyAge","babyAgeOrMonth","currentWeight","area","city","address",
+      "preferredShift","shiftHoursCount","shiftTime","careStartDate","serviceDays",
+      "budget","leadDate","createdAt",
+    ];
     const csv = [
       headers.join(","),
       ...rows.map((l) => headers.map((h) => JSON.stringify((l as never as Record<string, unknown>)[h] ?? "")).join(",")),
