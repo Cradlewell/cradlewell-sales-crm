@@ -257,11 +257,13 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     const tx = col.align === "right" ? col.x + col.w - 1 : col.align === "center" ? col.x + col.w / 2 : col.x;
     doc.text(label, tx, y, { align: col.align });
   };
+  const firstCgst = opts.items.find((i) => i.cgstPct)?.cgstPct ?? 0;
+  const firstSgst = opts.items.find((i) => i.sgstPct)?.sgstPct ?? 0;
   place(cx.desc,  "DESCRIPTION", hRow);
   place(cx.qty,   "QTY",         hRow);
   place(cx.rate,  "RATE",        hRow);
-  place(cx.cgst,  "CGST",        hRow);
-  place(cx.sgst,  "SGST",        hRow);
+  place(cx.cgst,  firstCgst ? `CGST ${firstCgst}%` : "CGST", hRow);
+  place(cx.sgst,  firstSgst ? `SGST ${firstSgst}%` : "SGST", hRow);
   place(cx.amt,   "TOTAL",       hRow);
 
   // Rows
@@ -285,8 +287,8 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     cell(cx.desc, dl);
     cell(cx.qty,  String(it.qty));
     cell(cx.rate, inr(it.rate));
-    cell(cx.cgst, it.cgstPct ? `${it.cgstPct}%  ${inr(cgstA)}` : "—");
-    cell(cx.sgst, it.sgstPct ? `${it.sgstPct}%  ${inr(sgstA)}` : "—");
+    cell(cx.cgst, it.cgstPct ? inr(cgstA) : "—");
+    cell(cx.sgst, it.sgstPct ? inr(sgstA) : "—");
     cell(cx.amt,  inr(amt), true);
     ry += rowH;
     // soft row separator
