@@ -7,7 +7,6 @@ import {
   FileText,
   Receipt,
   BarChart3,
-  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -20,6 +19,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import logo from "@/assets/cradlewell-logo.png";
 
 const items = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -38,9 +38,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <Link to="/" className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[image:var(--gradient-brand)] text-primary-foreground shadow-md">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <img src={logo} alt="Cradlewell" className="h-9 w-9 object-contain" />
           <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
             <span className="text-sm font-semibold tracking-tight">Cradlewell</span>
             <span className="text-[11px] text-muted-foreground">Sales CRM</span>
