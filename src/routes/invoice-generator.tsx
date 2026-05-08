@@ -44,7 +44,7 @@ function InvoiceGeneratorPage() {
   const [placeOfSupply, setPlaceOfSupply] = React.useState("Karnataka (29)");
 
   const [items, setItems] = React.useState<InvoiceItem[]>([
-    { description: "30 days Nurse care", qty: 1, rate: 4000, taxPct: 9 },
+    { description: "30 days Nurse care", qty: 1, rate: 4000, cgstPct: 9, sgstPct: 9 },
   ]);
 
   const [discount, setDiscount] = React.useState<number>(0);
@@ -79,7 +79,8 @@ function InvoiceGeneratorPage() {
           description: `${customer.serviceRequired ?? "Care Service"}${customer.preferredShift ? ` — ${customer.preferredShift}` : ""}${customer.serviceDays ? ` | ${customer.serviceDays} days` : ""}`,
           qty: customer.serviceDays ?? 1,
           rate: customer.budget ?? 0,
-          taxPct: 9,
+          cgstPct: 9,
+          sgstPct: 9,
         }];
       }
       return prev;
@@ -88,14 +89,14 @@ function InvoiceGeneratorPage() {
   }, [customerId]);
 
   const subTotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
-  const cgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.taxPct) / 100, 0);
-  const sgstTotal = cgstTotal;
+  const cgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.cgstPct) / 100, 0);
+  const sgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.sgstPct) / 100, 0);
   const discountAmt = discountIsPct ? (subTotal * discount) / 100 : discount;
   const total = Math.max(0, subTotal + cgstTotal + sgstTotal - discountAmt - tdsAmount + adjustmentAmount);
 
   const updateItem = (idx: number, patch: Partial<InvoiceItem>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-  const addRow = () => setItems((p) => [...p, { description: "", qty: 1, rate: 0, taxPct: 0 }]);
+  const addRow = () => setItems((p) => [...p, { description: "", qty: 1, rate: 0, cgstPct: 0, sgstPct: 0 }]);
   const removeRow = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
 
   const customerName = isNewCustomer ? newName : (customer?.name ?? "");
@@ -225,7 +226,8 @@ function InvoiceGeneratorPage() {
                 <th className="px-3 py-2 text-left">Item Details</th>
                 <th className="px-3 py-2 text-right w-24">Qty</th>
                 <th className="px-3 py-2 text-right w-28">Rate</th>
-                <th className="px-3 py-2 text-right w-24">CGST/SGST %</th>
+                <th className="px-3 py-2 text-right w-20">CGST %</th>
+                <th className="px-3 py-2 text-right w-20">SGST %</th>
                 <th className="px-3 py-2 text-right w-32">Amount</th>
                 <th className="w-10"></th>
               </tr>
@@ -238,7 +240,8 @@ function InvoiceGeneratorPage() {
                   </td>
                   <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.qty} onChange={(e) => updateItem(idx, { qty: Number(e.target.value) })} /></td>
                   <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.rate} onChange={(e) => updateItem(idx, { rate: Number(e.target.value) })} /></td>
-                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.taxPct} onChange={(e) => updateItem(idx, { taxPct: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.cgstPct} onChange={(e) => updateItem(idx, { cgstPct: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.sgstPct} onChange={(e) => updateItem(idx, { sgstPct: Number(e.target.value) })} /></td>
                   <td className="px-3 py-2 text-right font-medium">₹{(it.qty * it.rate).toLocaleString("en-IN")}</td>
                   <td className="px-2 py-2">
                     {items.length > 1 && (
