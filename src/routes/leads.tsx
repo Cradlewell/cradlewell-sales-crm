@@ -208,7 +208,7 @@ function LeadsPage() {
           leadDate: r.createdAt || now,
           serviceRequired: r.serviceRequired || "Newborn Care",
           babyStatus: (r.babyStatus as BabyStatus) || "Born",
-          owner: r.owner || "Aarav",
+          owner: r.owner || "",
           stage: (r.stage as LeadStage) || "New Lead",
           temperature: (r.temperature as LeadTemperature) || "Warm",
           createdAt: r.createdAt || now,

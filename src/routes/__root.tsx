@@ -32,14 +32,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
+      { title: "Cradlewell Sales CRM" },
       { name: "description", content: "Cradlewell Sales CRM — Manage leads, follow-ups, quotations, and closures." },
-      { name: "author", content: "Lovable" },
+      { name: "author", content: "Cradlewell" },
       { property: "og:title", content: "Cradlewell Sales CRM" },
       { property: "og:description", content: "Convert leads faster with a focused sales pipeline." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

@@ -39,7 +39,7 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
     preferredShift: "Day" as unknown as Shift,
     budget: "",
     notes: "",
-    owner: "Aarav",
+    owner: "",
     babyBirthStageStatus: "",
     babyAge: "",
     currentWeight: "",
@@ -235,6 +235,9 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
           </Field>
           <Field label="Budget (₹)">
             <Input type="number" value={form.budget} onChange={(e) => set("budget", e.target.value)} />
+          </Field>
+          <Field label="Assigned to (owner)">
+            <Input placeholder="e.g. Aarav" value={form.owner} onChange={(e) => set("owner", e.target.value)} />
           </Field>
           <div className="sm:col-span-2">
             <Label className="mb-1 block text-xs">Requirement notes</Label>

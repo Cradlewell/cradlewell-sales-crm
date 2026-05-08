@@ -215,6 +215,16 @@ export const api = {
       leads: db.leads.map((l) => (l.id === id ? { ...l, ...patch } : l)),
     }));
   },
+  deleteLead(id: string) {
+    setDB((db) => ({
+      ...db,
+      leads: db.leads.filter((l) => l.id !== id),
+      followups: db.followups.filter((f) => f.leadId !== id),
+      quotations: db.quotations.filter((q) => q.leadId !== id),
+      closures: db.closures.filter((c) => c.leadId !== id),
+      activity: db.activity.filter((a) => a.leadId !== id),
+    }));
+  },
   moveStage(id: string, stage: Lead["stage"]) {
     const before = getDB().leads.find((l) => l.id === id);
     setDB((db) => ({

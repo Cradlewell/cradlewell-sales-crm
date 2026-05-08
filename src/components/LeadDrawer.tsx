@@ -52,6 +52,8 @@ import {
   Sparkles,
   Pencil,
   Check,
+  Trash2,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -83,6 +85,7 @@ export function LeadDrawer({
   const db = useDB();
   const lead = db.leads.find((l) => l.id === leadId);
   const [editing, setEditing] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const [form, setForm] = React.useState<Record<string, string>>({});
 
   React.useEffect(() => {
@@ -108,8 +111,12 @@ export function LeadDrawer({
         area: lead.area ?? "",
         city: lead.city ?? "",
         address: lead.address ?? "",
+        owner: lead.owner ?? "",
+        temperature: lead.temperature ?? "Warm",
+        closureProbability: lead.closureProbability != null ? String(lead.closureProbability) : "",
       });
       setEditing(false);
+      setConfirmDelete(false);
     }
   }, [lead?.id]);
 
@@ -144,6 +151,9 @@ export function LeadDrawer({
       area: form.area || undefined,
       city: form.city || undefined,
       address: form.address || undefined,
+      owner: form.owner || lead.owner,
+      temperature: (form.temperature || lead.temperature) as LeadTemperature,
+      closureProbability: form.closureProbability !== "" ? Number(form.closureProbability) : undefined,
     });
     setEditing(false);
     toast.success("Lead updated");
@@ -223,15 +233,13 @@ export function LeadDrawer({
 
         <div className="space-y-4 p-5">
           <div className="rounded-xl border bg-muted/40 p-3">
-            <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</Label>
-              <Select value={lead.stage} onValueChange={(v) => api.moveStage(lead.id, v as never)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {LEAD_STAGES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</Label>
+            <Select value={lead.stage} onValueChange={(v) => api.moveStage(lead.id, v as never)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {LEAD_STAGES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+              </SelectContent>
+            </Select>
           </div>
 
           <Tabs defaultValue="profile">
@@ -239,41 +247,52 @@ export function LeadDrawer({
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="followups">Follow-ups ({followups.length})</TabsTrigger>
               <TabsTrigger value="quotations">Quotations ({quotations.length})</TabsTrigger>
+              <TabsTrigger value="closure">Closure</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="space-y-3">
               <Section icon={<User className="h-4 w-4" />} title="Lead info">
-                <EditField label="Name" editing={editing} value={form.name} display={lead.name} onChange={(v)=>setF("name",v)} />
-                <EditField label="Phone" editing={editing} value={form.phone} display={lead.phone} onChange={(v)=>setF("phone",v)} />
-                <EditField label="WhatsApp" editing={editing} value={form.whatsapp} display={lead.whatsapp} onChange={(v)=>setF("whatsapp",v)} />
-                <EditField label="Source" editing={editing} value={form.source} display={lead.source} onChange={(v)=>setF("source",v)} />
-                <EditField label="Lead date & time" editing={editing} value={form.leadDate} display={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy, p")} type="datetime-local" onChange={(v)=>setF("leadDate",v)} />
+                <EditField label="Name" editing={editing} value={form.name} display={lead.name} onChange={(v) => setF("name", v)} />
+                <EditField label="Phone" editing={editing} value={form.phone} display={lead.phone} onChange={(v) => setF("phone", v)} />
+                <EditField label="WhatsApp" editing={editing} value={form.whatsapp} display={lead.whatsapp} onChange={(v) => setF("whatsapp", v)} />
+                <EditField label="Source" editing={editing} value={form.source} display={lead.source} onChange={(v) => setF("source", v)} />
+                <EditField label="Lead date & time" editing={editing} value={form.leadDate} display={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy, p")} type="datetime-local" onChange={(v) => setF("leadDate", v)} />
                 <Info label="Lead day" value={format(new Date(lead.leadDate ?? lead.createdAt), "EEEE")} />
+                <EditField label="Owner" editing={editing} value={form.owner} display={lead.owner || "-"} onChange={(v) => setF("owner", v)} />
+                <SelField
+                  label="Temperature"
+                  editing={editing}
+                  value={form.temperature as LeadTemperature}
+                  display={<TempBadge temp={lead.temperature} />}
+                  options={["Cold", "Warm", "Hot"]}
+                  onChange={(v) => setF("temperature", v)}
+                />
+                <EditField label="Closure prob. %" editing={editing} value={form.closureProbability} display={lead.closureProbability != null ? `${lead.closureProbability}%` : "-"} type="number" onChange={(v) => setF("closureProbability", v)} />
               </Section>
 
               <Section icon={<Baby className="h-4 w-4" />} title="Baby details">
-                <EditField label="Status" editing={editing} value={form.babyStatus} display={lead.babyStatus} onChange={(v)=>setF("babyStatus",v)} />
-                <EditField label="Hospital" editing={editing} value={form.hospitalName} display={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} onChange={(v)=>setF("hospitalName",v)} />
-                <EditField label="Birth stage / status" editing={editing} value={form.babyBirthStageStatus} display={lead.babyBirthStageStatus ?? "-"} onChange={(v)=>setF("babyBirthStageStatus",v)} />
-                <EditField label="Baby age" editing={editing} value={form.babyAge} display={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} onChange={(v)=>setF("babyAge",v)} />
-                <EditField label="Current weight" editing={editing} value={form.currentWeight} display={lead.currentWeight ?? "-"} onChange={(v)=>setF("currentWeight",v)} />
+                <EditField label="Status" editing={editing} value={form.babyStatus} display={lead.babyStatus} onChange={(v) => setF("babyStatus", v)} />
+                <EditField label="Hospital" editing={editing} value={form.hospitalName} display={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} onChange={(v) => setF("hospitalName", v)} />
+                <EditField label="Birth stage / status" editing={editing} value={form.babyBirthStageStatus} display={lead.babyBirthStageStatus ?? "-"} onChange={(v) => setF("babyBirthStageStatus", v)} />
+                <EditField label="Baby age" editing={editing} value={form.babyAge} display={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} onChange={(v) => setF("babyAge", v)} />
+                <EditField label="Current weight" editing={editing} value={form.currentWeight} display={lead.currentWeight ?? "-"} onChange={(v) => setF("currentWeight", v)} />
               </Section>
 
               <Section icon={<Briefcase className="h-4 w-4" />} title="Service & shift">
-                <EditField label="Service" editing={editing} value={form.serviceRequired} display={lead.serviceRequired} onChange={(v)=>setF("serviceRequired",v)} />
-                <EditField label="Shift type" editing={editing} value={form.preferredShift} display={lead.preferredShift ?? "-"} onChange={(v)=>setF("preferredShift",v)} />
-                <EditField label="Shift hours" editing={editing} value={form.shiftHoursCount} display={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} icon={<Clock className="h-3 w-3" />} type="number" onChange={(v)=>setF("shiftHoursCount",v)} />
-                <EditField label="Shift time" editing={editing} value={form.shiftTime} display={lead.shiftTime ?? "-"} onChange={(v)=>setF("shiftTime",v)} />
-                <EditField label="Care start date" editing={editing} value={form.careStartDate} display={lead.careStartDate ? format(new Date(lead.careStartDate), "dd MMM yyyy") : "-"} icon={<CalendarDays className="h-3 w-3" />} type="date" onChange={(v)=>setF("careStartDate",v)} />
-                <EditField label="Service days" editing={editing} value={form.serviceDays} display={lead.serviceDays ? `${lead.serviceDays} days` : "-"} type="number" onChange={(v)=>setF("serviceDays",v)} />
-                <EditField label="Budget" editing={editing} value={form.budget} display={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} icon={<IndianRupee className="h-3 w-3" />} type="number" onChange={(v)=>setF("budget",v)} />
+                <EditField label="Service" editing={editing} value={form.serviceRequired} display={lead.serviceRequired} onChange={(v) => setF("serviceRequired", v)} />
+                <EditField label="Shift type" editing={editing} value={form.preferredShift} display={lead.preferredShift ?? "-"} onChange={(v) => setF("preferredShift", v)} />
+                <EditField label="Shift hours" editing={editing} value={form.shiftHoursCount} display={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} icon={<Clock className="h-3 w-3" />} type="number" onChange={(v) => setF("shiftHoursCount", v)} />
+                <EditField label="Shift time" editing={editing} value={form.shiftTime} display={lead.shiftTime ?? "-"} onChange={(v) => setF("shiftTime", v)} />
+                <EditField label="Care start date" editing={editing} value={form.careStartDate} display={lead.careStartDate ? format(new Date(lead.careStartDate), "dd MMM yyyy") : "-"} icon={<CalendarDays className="h-3 w-3" />} type="date" onChange={(v) => setF("careStartDate", v)} />
+                <EditField label="Service days" editing={editing} value={form.serviceDays} display={lead.serviceDays ? `${lead.serviceDays} days` : "-"} type="number" onChange={(v) => setF("serviceDays", v)} />
+                <EditField label="Budget" editing={editing} value={form.budget} display={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} icon={<IndianRupee className="h-3 w-3" />} type="number" onChange={(v) => setF("budget", v)} />
               </Section>
 
               <Section icon={<MapPin className="h-4 w-4" />} title="Location">
-                <EditField label="Area" editing={editing} value={form.area} display={lead.area ?? "-"} onChange={(v)=>setF("area",v)} />
-                <EditField label="City" editing={editing} value={form.city} display={lead.city ?? "-"} onChange={(v)=>setF("city",v)} />
-                <EditField label="Address" editing={editing} value={form.address} display={lead.address ?? "-"} full onChange={(v)=>setF("address",v)} />
+                <EditField label="Area" editing={editing} value={form.area} display={lead.area ?? "-"} onChange={(v) => setF("area", v)} />
+                <EditField label="City" editing={editing} value={form.city} display={lead.city ?? "-"} onChange={(v) => setF("city", v)} />
+                <EditField label="Address" editing={editing} value={form.address} display={lead.address ?? "-"} full onChange={(v) => setF("address", v)} />
               </Section>
 
               <div>
@@ -282,6 +301,57 @@ export function LeadDrawer({
                   defaultValue={lead.notes}
                   onBlur={(e) => api.updateLead(lead.id, { notes: e.target.value })}
                 />
+              </div>
+
+              <div>
+                <Label className="text-xs">Call notes</Label>
+                <Textarea
+                  defaultValue={lead.callNotes}
+                  placeholder="Notes from phone calls…"
+                  onBlur={(e) => api.updateLead(lead.id, { callNotes: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">WhatsApp notes</Label>
+                <Textarea
+                  defaultValue={lead.whatsappNotes}
+                  placeholder="Notes from WhatsApp conversations…"
+                  onBlur={(e) => api.updateLead(lead.id, { whatsappNotes: e.target.value })}
+                />
+              </div>
+
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+                <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-destructive">
+                  Danger zone
+                </div>
+                {!confirmDelete ? (
+                  <Button variant="destructive" size="sm" onClick={() => setConfirmDelete(true)}>
+                    <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete lead
+                  </Button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      This permanently deletes the lead and all follow-ups, quotations, closures, and activity. Cannot be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          api.deleteLead(lead.id);
+                          onClose();
+                          toast.success("Lead deleted");
+                        }}
+                      >
+                        Confirm delete
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setConfirmDelete(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
@@ -318,18 +388,7 @@ export function LeadDrawer({
                           <Button size="sm" variant="outline" onClick={() => api.completeFollowup(f.id)}>
                             <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Mark done
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              api.rescheduleFollowup(
-                                f.id,
-                                new Date(Date.now() + 86400000).toISOString(),
-                              )
-                            }
-                          >
-                            <AlarmClock className="mr-1 h-3.5 w-3.5" /> +1 day
-                          </Button>
+                          <RescheduleButton followupId={f.id} currentDue={f.dueAt} />
                         </div>
                       )}
                     </div>
@@ -470,6 +529,39 @@ function EditField({
   );
 }
 
+function SelField<T extends string>({
+  label,
+  editing,
+  value,
+  display,
+  options,
+  onChange,
+}: {
+  label: string;
+  editing: boolean;
+  value: T;
+  display: React.ReactNode;
+  options: T[];
+  onChange: (v: T) => void;
+}) {
+  if (!editing) return <Info label={label} value={display} />;
+  return (
+    <div>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="mt-1 h-8">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o} value={o}>{o}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function Section({
   icon,
   title,
@@ -488,6 +580,46 @@ function Section({
         {title}
       </div>
       <div className="grid grid-cols-2 gap-3 text-sm">{children}</div>
+    </div>
+  );
+}
+
+function RescheduleButton({ followupId, currentDue }: { followupId: string; currentDue: string }) {
+  const [picking, setPicking] = React.useState(false);
+  const [date, setDate] = React.useState(
+    () => new Date(Date.now() + 86400000).toISOString().slice(0, 16),
+  );
+
+  if (!picking) {
+    return (
+      <Button size="sm" variant="ghost" onClick={() => setPicking(true)}>
+        <AlarmClock className="mr-1 h-3.5 w-3.5" /> Reschedule
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Input
+        type="datetime-local"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+        className="h-7 w-44 text-xs"
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          api.rescheduleFollowup(followupId, new Date(date).toISOString());
+          setPicking(false);
+          toast.success("Follow-up rescheduled");
+        }}
+      >
+        <Check className="h-3 w-3" />
+      </Button>
+      <Button size="sm" variant="ghost" className="px-1.5" onClick={() => setPicking(false)}>
+        <X className="h-3 w-3" />
+      </Button>
     </div>
   );
 }
@@ -591,7 +723,9 @@ function ClosureForm({ leadId }: { leadId: string }) {
           <Select value={status} onValueChange={(v) => setStatus(v as never)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {(["Pending","Partial","Paid"] as const).map((s)=>(<SelectItem key={s} value={s}>{s}</SelectItem>))}
+              {(["Pending", "Partial", "Paid"] as const).map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -600,7 +734,7 @@ function ClosureForm({ leadId }: { leadId: string }) {
           <Select value={reason} onValueChange={(v) => setReason(v as LostReason)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {LOST_REASONS.map((r)=>(<SelectItem key={r} value={r}>{r}</SelectItem>))}
+              {LOST_REASONS.map((r) => (<SelectItem key={r} value={r}>{r}</SelectItem>))}
             </SelectContent>
           </Select>
           <Input value={comp} onChange={(e) => setComp(e.target.value)} placeholder="Competitor" />
