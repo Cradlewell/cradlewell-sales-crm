@@ -137,20 +137,11 @@ export function LeadDrawer({
             <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-medium">
               <Sparkles className="h-3 w-3" /> {lead.stage}
             </span>
-            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
-              {lead.temperature} lead
-            </span>
-            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
-              Owner: {lead.owner}
-            </span>
-            <span className="rounded-full bg-white/15 px-2.5 py-1 text-[11px]">
-              {lead.closureProbability ?? 0}% close prob.
-            </span>
           </div>
         </SheetHeader>
 
         <div className="space-y-4 p-5">
-          <div className="grid grid-cols-2 gap-2 rounded-xl border bg-muted/40 p-3 sm:grid-cols-3">
+          <div className="rounded-xl border bg-muted/40 p-3">
             <div>
               <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Stage</Label>
               <Select value={lead.stage} onValueChange={(v) => api.moveStage(lead.id, v as never)}>
@@ -160,26 +151,6 @@ export function LeadDrawer({
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Temperature</Label>
-              <Select
-                value={lead.temperature}
-                onValueChange={(v) => api.updateLead(lead.id, { temperature: v as LeadTemperature })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {(["Cold","Warm","Hot"] as const).map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Closure %</Label>
-              <Input
-                type="number"
-                value={lead.closureProbability ?? 0}
-                onChange={(e) => api.updateLead(lead.id, { closureProbability: Number(e.target.value) })}
-              />
-            </div>
           </div>
 
           <Tabs defaultValue="profile">
@@ -187,7 +158,6 @@ export function LeadDrawer({
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="followups">Follow-ups ({followups.length})</TabsTrigger>
               <TabsTrigger value="quotations">Quotations ({quotations.length})</TabsTrigger>
-              <TabsTrigger value="closure">Closure</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
             </TabsList>
 
