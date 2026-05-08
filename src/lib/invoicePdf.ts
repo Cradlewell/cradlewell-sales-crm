@@ -13,15 +13,32 @@ function loadImage(src: string) {
   });
 }
 
-export async function renderInvoicePdf(opts: {
-  invoiceNo: string;
-  invoiceDate: Date;
-  dueDate: Date;
-  lead?: Lead;
+export interface InvoiceItem {
   description: string;
   qty: number;
-  unitPrice: number;
-  discount: number;
+  rate: number;
+  taxPct: number;
+}
+
+export async function renderInvoicePdf(opts: {
+  invoiceNo: string;
+  orderNumber?: string;
+  invoiceDate: Date;
+  dueDate: Date;
+  terms?: string;
+  salesperson?: string;
+  subject?: string;
+  lead?: Lead;
+  customerName?: string;
+  items: InvoiceItem[];
+  discountValue: number;
+  discountIsPct: boolean;
+  tdsTcsLabel?: string;
+  tdsTcsAmount: number;
+  adjustmentLabel?: string;
+  adjustmentAmount: number;
+  customerNotes?: string;
+  termsAndConditions?: string;
   fileName: string;
 }) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -30,9 +47,11 @@ export async function renderInvoicePdf(opts: {
     doc.addImage(img, "JPEG", 0, 0, 210, 297);
   } catch { /* no bg */ }
 
-  const { lead, qty, unitPrice, discount, description } = opts;
-  const subtotal = qty * unitPrice;
-  const total = Math.max(0, subtotal - discount);
+  const { lead, items, discountValue, discountIsPct, tdsTcsAmount, adjustmentAmount } = opts;
+  const subtotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
+  const taxTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.taxPct) / 100, 0);
+  const discountAmt = discountIsPct ? (subtotal * discountValue) / 100 : discountValue;
+  const total = Math.max(0, subtotal + taxTotal - discountAmt - tdsTcsAmount + adjustmentAmount);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -48,7 +67,7 @@ export async function renderInvoicePdf(opts: {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   y += 6;
-  doc.text(lead?.name ?? "—", 18, y); y += 5;
+  doc.text(opts.customerName ?? lead?.name ?? "—", 18, y); y += 5;
   doc.text(`Lead ID: ${lead?.id ?? "—"}`, 18, y); y += 5;
   doc.text(`Phone: ${lead?.phone ?? "—"}`, 18, y); y += 5;
   const addr = lead?.address ?? [lead?.area, lead?.city].filter(Boolean).join(", ");
@@ -57,33 +76,69 @@ export async function renderInvoicePdf(opts: {
     doc.text(lines, 18, y);
     y += lines.length * 5;
   }
-  if (lead?.hospitalName) { doc.text(`Hospital: ${lead.hospitalName}`, 18, y); y += 5; }
-  if (lead?.babyStatus) {
-    const bb = `Baby: ${lead.babyStatus}${lead.babyAge ? `, ${lead.babyAge}` : ""}${lead.currentWeight ? `, ${lead.currentWeight}` : ""}`;
-    doc.text(bb, 18, y); y += 5;
-  }
+  if (opts.subject) { doc.text(`Subject: ${opts.subject}`, 18, y); y += 5; }
+  if (opts.salesperson) { doc.text(`Salesperson: ${opts.salesperson}`, 18, y); y += 5; }
 
-  const rowY = 132;
-  const descLines = doc.splitTextToSize(description, 90);
+  let rowY = 132;
   doc.setFontSize(10);
-  doc.text(descLines, 36, rowY);
-  doc.text(`INR ${unitPrice.toLocaleString("en-IN")}`, 130, rowY, { align: "right" });
-  doc.text(String(qty), 158, rowY, { align: "right" });
-  doc.text(`INR ${subtotal.toLocaleString("en-IN")}`, 192, rowY, { align: "right" });
+  items.forEach((it) => {
+    const descLines = doc.splitTextToSize(it.description || "Item", 80);
+    doc.text(descLines, 36, rowY);
+    doc.text(`INR ${it.rate.toLocaleString("en-IN")}`, 128, rowY, { align: "right" });
+    doc.text(String(it.qty), 152, rowY, { align: "right" });
+    doc.text(`INR ${(it.qty * it.rate).toLocaleString("en-IN")}`, 192, rowY, { align: "right" });
+    rowY += Math.max(6, descLines.length * 5) + 2;
+  });
 
-  let ty = rowY + 30;
+  let ty = Math.max(rowY + 6, 175);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("Subtotal:", 140, ty);
   doc.text(`INR ${subtotal.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
-  ty += 6;
-  doc.text("Discount:", 140, ty);
-  doc.text(`- INR ${discount.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
-  ty += 7;
+  if (taxTotal > 0) {
+    ty += 6;
+    doc.text("Tax:", 140, ty);
+    doc.text(`INR ${taxTotal.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+  }
+  if (discountAmt > 0) {
+    ty += 6;
+    doc.text(`Discount${discountIsPct ? ` (${discountValue}%)` : ""}:`, 140, ty);
+    doc.text(`- INR ${discountAmt.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+  }
+  if (tdsTcsAmount > 0) {
+    ty += 6;
+    doc.text(`${opts.tdsTcsLabel ?? "TDS"}:`, 140, ty);
+    doc.text(`- INR ${tdsTcsAmount.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+  }
+  if (adjustmentAmount !== 0) {
+    ty += 6;
+    doc.text(`Adjustment${opts.adjustmentLabel ? ` (${opts.adjustmentLabel})` : ""}:`, 140, ty);
+    doc.text(`INR ${adjustmentAmount.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+  }
+  ty += 8;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("TOTAL:", 140, ty);
+  doc.text("Total (₹):", 140, ty);
   doc.text(`INR ${total.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+
+  // Customer notes & T&C (lower portion)
+  let footY = ty + 14;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  if (opts.customerNotes) {
+    doc.text("Customer Notes:", 18, footY); footY += 5;
+    doc.setFont("helvetica", "normal");
+    const nLines = doc.splitTextToSize(opts.customerNotes, 175);
+    doc.text(nLines, 18, footY);
+    footY += nLines.length * 4 + 4;
+  }
+  if (opts.termsAndConditions) {
+    doc.setFont("helvetica", "bold");
+    doc.text("Terms & Conditions:", 18, footY); footY += 5;
+    doc.setFont("helvetica", "normal");
+    const tLines = doc.splitTextToSize(opts.termsAndConditions, 175);
+    doc.text(tLines, 18, footY);
+  }
 
   doc.save(opts.fileName);
 }
