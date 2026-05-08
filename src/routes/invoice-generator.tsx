@@ -15,9 +15,6 @@ export const Route = createFileRoute("/invoice-generator")({
   component: InvoiceGeneratorPage,
 });
 
-const DEFAULT_NOTES =
-  "Thank you for choosing Cradlewell for your newborn care support.\nWe are committed to providing safe, reliable, and compassionate care for both mother and baby.\nIf you need any assistance, our team is always here to help.\n\nWarm regards,\nTeam Cradlewell";
-
 const DEFAULT_TERMS = `• Service Scope: Care service is applicable for one newborn baby under the selected package.
 • Care Timings: Services will be provided strictly as per the hours mentioned in the invoice/package.
 • Overtime: Any service beyond the agreed hours will be charged additionally.
@@ -54,7 +51,6 @@ function InvoiceGeneratorPage() {
   const [adjustmentLabel, setAdjustmentLabel] = React.useState<string>("");
   const [adjustmentAmount, setAdjustmentAmount] = React.useState<number>(0);
 
-  const [customerNotes, setCustomerNotes] = React.useState<string>(DEFAULT_NOTES);
   const [tnc, setTnc] = React.useState<string>(DEFAULT_TERMS);
 
   const customer = db.leads.find((l) => l.id === customerId);
@@ -119,7 +115,6 @@ function InvoiceGeneratorPage() {
       tdsTcsAmount: tdsAmount,
       adjustmentLabel,
       adjustmentAmount,
-      customerNotes,
       termsAndConditions: tnc,
       fileName: `Cradlewell-Invoice-${customerName.replace(/\s+/g, "_") || invoiceNo}.pdf`,
     });
@@ -291,11 +286,7 @@ function InvoiceGeneratorPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="space-y-2 p-4">
-          <Label className="text-xs font-medium">Customer Notes</Label>
-          <Textarea rows={6} value={customerNotes} onChange={(e) => setCustomerNotes(e.target.value)} />
-        </Card>
-        <Card className="space-y-2 p-4">
+        <Card className="space-y-2 p-4 md:col-span-2">
           <Label className="text-xs font-medium">Terms &amp; Conditions</Label>
           <Textarea rows={6} value={tnc} onChange={(e) => setTnc(e.target.value)} />
         </Card>
