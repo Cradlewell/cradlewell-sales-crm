@@ -36,7 +36,6 @@ export interface InvoicePdfOpts {
   tdsTcsAmount: number;
   adjustmentLabel?: string;
   adjustmentAmount: number;
-  customerNotes?: string;
   termsAndConditions?: string;
   fileName: string;
 }
@@ -54,11 +53,13 @@ const COMPANY = {
   web: "https://www.cradlewell.com/",
 };
 
-const BLUE: [number, number, number] = [37, 99, 235];
-const TEXT: [number, number, number] = [40, 40, 40];
-const MUTED: [number, number, number] = [120, 120, 120];
-const LINE: [number, number, number] = [200, 200, 200];
-const HEAD_BG: [number, number, number] = [235, 235, 235];
+const BRAND: [number, number, number] = [88, 80, 236];      // indigo-violet
+const BRAND_DK: [number, number, number] = [55, 48, 163];
+const TEXT: [number, number, number] = [33, 37, 51];
+const MUTED: [number, number, number] = [120, 124, 140];
+const LINE: [number, number, number] = [225, 228, 235];
+const SOFT_BG: [number, number, number] = [245, 246, 252];
+const ACCENT_BG: [number, number, number] = [238, 236, 254];
 
 function inr(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -111,102 +112,109 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = 210, H = 297, M = 12;
 
-  // Outer border
-  doc.setDrawColor(...LINE);
-  doc.setLineWidth(0.3);
-  doc.rect(M, M, W - 2 * M, H - 2 * M);
+  // ===== Top brand band =====
+  doc.setFillColor(...BRAND);
+  doc.rect(0, 0, W, 4, "F");
 
   // ===== Header =====
+  const headerY = 10;
   try {
     const logo = await loadImage(logoUrl);
-    doc.addImage(logo, "JPEG", M + 4, M + 4, 22, 22);
+    doc.addImage(logo, "JPEG", M, headerY, 20, 20);
   } catch { /* ignore */ }
 
-  // Company name + address
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
+  doc.setFontSize(12);
   doc.setTextColor(...TEXT);
-  doc.text(COMPANY.name, M + 30, M + 8);
+  doc.text(COMPANY.name, M + 24, headerY + 5);
 
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  let hy = headerY + 10;
+  COMPANY.addr.forEach((l) => { doc.text(l, M + 24, hy); hy += 3.6; });
+  doc.setTextColor(...BRAND_DK);
+  doc.text(COMPANY.gstin, M + 24, hy); hy += 3.6;
+  doc.text(`${COMPANY.email}  •  ${COMPANY.web}`, M + 24, hy);
+
+  // TAX INVOICE pill
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(...BRAND);
+  doc.text("TAX INVOICE", W - M, headerY + 6, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...MUTED);
-  let hy = M + 13;
-  COMPANY.addr.forEach((l) => { doc.text(l, M + 30, hy); hy += 4; });
-  doc.setTextColor(...BLUE);
-  doc.text(COMPANY.gstin, M + 30, hy); hy += 4;
-  doc.text(COMPANY.email, M + 30, hy); hy += 4;
-  doc.text(COMPANY.web, M + 30, hy);
-
-  // TAX INVOICE title
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(22);
+  doc.text(`Invoice #  `, W - M - 30, headerY + 12, { align: "right" });
+  doc.setFont("helvetica", "bold");
   doc.setTextColor(...TEXT);
-  doc.text("TAX INVOICE", W - M - 4, M + 26, { align: "right" });
+  doc.text(opts.invoiceNo, W - M, headerY + 12, { align: "right" });
 
-  // ===== Meta box =====
-  const metaY = M + 36;
-  const metaH = 26;
+  // Divider
+  const divY = headerY + 26;
   doc.setDrawColor(...LINE);
-  doc.line(M, metaY, W - M, metaY);
-  doc.line(M, metaY + metaH, W - M, metaY + metaH);
-  doc.line(W / 2, metaY, W / 2, metaY + metaH);
+  doc.setLineWidth(0.3);
+  doc.line(M, divY, W - M, divY);
 
-  doc.setFontSize(9);
-  const labelX = M + 3, colonX = M + 28, valX = M + 32;
-  const rows: [string, string][] = [
-    ["#", opts.invoiceNo],
-    ["Invoice Date", format(opts.invoiceDate, "dd/MM/yyyy")],
+  // ===== Meta strip =====
+  const metaY = divY + 4;
+  const metaH = 18;
+  doc.setFillColor(...SOFT_BG);
+  doc.roundedRect(M, metaY, W - 2 * M, metaH, 1.5, 1.5, "F");
+
+  const metas: [string, string][] = [
+    ["Invoice Date", format(opts.invoiceDate, "dd MMM yyyy")],
     ["Terms", opts.terms ?? "Due on Receipt"],
-    ["Due Date", format(opts.dueDate, "dd/MM/yyyy")],
+    ["Due Date", format(opts.dueDate, "dd MMM yyyy")],
+    ["Place of Supply", opts.placeOfSupply ?? "Karnataka (29)"],
   ];
-  rows.forEach(([k, v], i) => {
-    const y = metaY + 6 + i * 5;
+  const colW = (W - 2 * M) / metas.length;
+  metas.forEach(([k, v], i) => {
+    const x = M + i * colW + 4;
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
     doc.setTextColor(...MUTED);
-    doc.text(k, labelX, y);
-    doc.text(":", colonX, y);
+    doc.text(k.toUpperCase(), x, metaY + 6);
     doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
     doc.setTextColor(...TEXT);
-    doc.text(v, valX, y);
+    doc.text(v, x, metaY + 13);
   });
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...MUTED);
-  doc.text("Place Of Supply", W / 2 + 3, metaY + 6);
-  doc.text(":", W / 2 + 36, metaY + 6);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...TEXT);
-  doc.text(opts.placeOfSupply ?? "Karnataka (29)", W / 2 + 40, metaY + 6);
 
   // ===== Bill To / Ship To =====
-  const btY = metaY + metaH;
-  const btH = 32;
-  doc.line(W / 2, btY, W / 2, btY + btH);
-  doc.line(M, btY + btH, W - M, btY + btH);
+  const btY = metaY + metaH + 5;
+  const btH = 34;
+  const cardW = (W - 2 * M - 4) / 2;
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...BLUE);
-  doc.text(opts.customerName || "—", M + 3, btY + 5);
-
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...TEXT);
-  let by = btY + 10;
-  addrLines(opts.billingAddress).forEach((l) => {
-    const ll = doc.splitTextToSize(l, W / 2 - M - 6);
-    doc.text(ll, M + 3, by);
-    by += ll.length * 4;
-  });
-
-  let sy = btY + 5;
-  addrLines(opts.shippingAddress).forEach((l) => {
-    const ll = doc.splitTextToSize(l, W / 2 - M - 6);
-    doc.text(ll, W / 2 + 3, sy);
-    sy += ll.length * 4;
-  });
+  const drawAddrCard = (x: number, title: string, addr: Address) => {
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...LINE);
+    doc.roundedRect(x, btY, cardW, btH, 1.5, 1.5, "FD");
+    doc.setFillColor(...ACCENT_BG);
+    doc.rect(x, btY, 2.2, btH, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...BRAND);
+    doc.text(title, x + 5, btY + 5);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...TEXT);
+    doc.text(opts.customerName || "—", x + 5, btY + 11);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    let yy = btY + 16;
+    addrLines(addr).forEach((l) => {
+      const ll = doc.splitTextToSize(l, cardW - 8);
+      doc.text(ll, x + 5, yy);
+      yy += ll.length * 3.6;
+    });
+  };
+  drawAddrCard(M, "BILL TO", opts.billingAddress);
+  drawAddrCard(M + cardW + 4, "SHIP TO", opts.shippingAddress);
 
   // ===== Item table =====
-  const tY = btY + btH;
+  const tY = btY + btH + 6;
   const tableW = W - 2 * M;
   const groupH = 5;
   const headH = 8;
@@ -225,33 +233,33 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   };
 
   // Group header band
-  doc.setFillColor(...HEAD_BG);
+  doc.setFillColor(...BRAND_DK);
   doc.rect(M, tY, tableW, groupH, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
+  doc.setFontSize(7.5);
+  doc.setTextColor(255, 255, 255);
   doc.text("CGST", cx.cgstP.x + (cx.cgstP.w + cx.cgstA.w) / 2, tY + 3.5, { align: "center" });
   doc.text("SGST", cx.sgstP.x + (cx.sgstP.w + cx.sgstA.w) / 2, tY + 3.5, { align: "center" });
 
   // Header row
-  doc.setFillColor(...HEAD_BG);
+  doc.setFillColor(...BRAND);
   doc.rect(M, tY + groupH, tableW, headH, "F");
-  doc.setFontSize(9);
-  doc.setTextColor(...TEXT);
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
   const hRow = tY + groupH + 5.5;
   const place = (col: Col, label: string, y: number) => {
     const tx = col.align === "right" ? col.x + col.w - 1 : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
     doc.text(label, tx, y, { align: col.align });
   };
   place(cx.no,    "#",           hRow);
-  place(cx.desc,  "Description", hRow);
+  place(cx.desc,  "DESCRIPTION", hRow);
   place(cx.qty,   "Qty",         hRow);
   place(cx.rate,  "Rate",        hRow);
   place(cx.cgstP, "%",           hRow);
   place(cx.cgstA, "Amt",         hRow);
   place(cx.sgstP, "%",           hRow);
   place(cx.sgstA, "Amt",         hRow);
-  place(cx.amt,   "Amount",      hRow);
+  place(cx.amt,   "AMOUNT",      hRow);
 
   // Rows
   doc.setFont("helvetica", "normal");
@@ -264,80 +272,121 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     const sgstA = (amt * it.sgstPct) / 100;
     subTotal += amt; cgstTotal += cgstA; sgstTotal += sgstA;
     const dl = doc.splitTextToSize(it.description || "—", cx.desc.w - 2);
+    const rowH = Math.max(dl.length * 4, 6) + 2;
+    if (idx % 2 === 1) {
+      doc.setFillColor(...SOFT_BG);
+      doc.rect(M, ry - 4, tableW, rowH, "F");
+    }
     const cell = (col: Col, txt: string | string[], color: [number, number, number] = TEXT) => {
       doc.setTextColor(...color);
       const tx = col.align === "right" ? col.x + col.w - 1 : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
       doc.text(txt, tx, ry, { align: col.align });
     };
-    cell(cx.no,    String(idx + 1), BLUE);
-    cell(cx.desc,  dl,              BLUE);
+    cell(cx.no,    String(idx + 1), MUTED);
+    cell(cx.desc,  dl,              TEXT);
     cell(cx.qty,   String(it.qty));
     cell(cx.rate,  inr(it.rate));
-    cell(cx.cgstP, it.cgstPct ? `${it.cgstPct}%` : "-", BLUE);
+    cell(cx.cgstP, it.cgstPct ? `${it.cgstPct}%` : "-", MUTED);
     cell(cx.cgstA, it.cgstPct ? inr(cgstA) : "-");
-    cell(cx.sgstP, it.sgstPct ? `${it.sgstPct}%` : "-", BLUE);
+    cell(cx.sgstP, it.sgstPct ? `${it.sgstPct}%` : "-", MUTED);
     cell(cx.sgstA, it.sgstPct ? inr(sgstA) : "-");
+    doc.setFont("helvetica", "bold");
     cell(cx.amt,   inr(amt));
-    ry += Math.max(dl.length * 4, 6) + 2;
+    doc.setFont("helvetica", "normal");
+    ry += rowH;
   });
 
   // Bottom border on table
   doc.setDrawColor(...LINE);
   doc.line(M, ry, W - M, ry);
 
-  // ===== Totals (right) + Words/Notes (left) =====
+  // ===== Totals (right) + Words (left) =====
   const discountAmt = opts.discountIsPct ? (subTotal * opts.discountValue) / 100 : opts.discountValue;
   const total = Math.max(0, subTotal + cgstTotal + sgstTotal - discountAmt - opts.tdsTcsAmount + opts.adjustmentAmount);
 
-  // Right totals area
-  const sumLeft = W / 2 + 10;
-  let sty = ry + 6;
+  // Totals card (right)
+  const totW = 80;
+  const totX = W - M - totW;
+  let sty = ry + 8;
+  const totTop = sty;
+  doc.setFillColor(...SOFT_BG);
+  doc.roundedRect(totX, sty, totW, 0.1, 1.5, 1.5, "F"); // placeholder; we'll redraw after computing
+
+  // We'll draw rows first to compute height
+  const rows: [string, string, boolean?][] = [];
+  rows.push(["Sub Total", inr(subTotal)]);
+  if (cgstTotal > 0) rows.push([`CGST${opts.items[0]?.cgstPct ? ` (${opts.items[0].cgstPct}%)` : ""}`, inr(cgstTotal)]);
+  if (sgstTotal > 0) rows.push([`SGST${opts.items[0]?.sgstPct ? ` (${opts.items[0].sgstPct}%)` : ""}`, inr(sgstTotal)]);
+  if (discountAmt > 0) rows.push([`Discount${opts.discountIsPct ? ` (${opts.discountValue}%)` : ""}`, "- " + inr(discountAmt)]);
+  if (opts.tdsTcsAmount > 0) rows.push([opts.tdsTcsLabel ?? "TDS", "- " + inr(opts.tdsTcsAmount)]);
+  if (opts.adjustmentAmount !== 0) rows.push([opts.adjustmentLabel || "Adjustment", inr(opts.adjustmentAmount)]);
+
+  const rowsH = rows.length * 5.5 + 4;
+  const totalBarH = 10;
+  const cardH = rowsH + totalBarH + 4;
+
+  // Draw card background
+  doc.setFillColor(...SOFT_BG);
+  doc.roundedRect(totX, totTop, totW, cardH, 1.5, 1.5, "F");
+
   doc.setFontSize(9);
-  const totRow = (k: string, v: string, bold = false) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setTextColor(...TEXT);
-    doc.text(k, sumLeft, sty);
-    doc.text(v, W - M - 3, sty, { align: "right" });
-    sty += 5.5;
-  };
-  totRow("Sub Total", inr(subTotal));
-  if (cgstTotal > 0) totRow(`CGST${opts.items[0]?.cgstPct ? ` (${opts.items[0].cgstPct}%)` : ""}`, inr(cgstTotal));
-  if (sgstTotal > 0) totRow(`SGST${opts.items[0]?.sgstPct ? ` (${opts.items[0].sgstPct}%)` : ""}`, inr(sgstTotal));
-  if (discountAmt > 0) totRow(`Discount${opts.discountIsPct ? ` (${opts.discountValue}%)` : ""}`, "- " + inr(discountAmt));
-  if (opts.tdsTcsAmount > 0) totRow(opts.tdsTcsLabel ?? "TDS", "- " + inr(opts.tdsTcsAmount));
-  if (opts.adjustmentAmount !== 0) totRow(opts.adjustmentLabel || "Adjustment", inr(opts.adjustmentAmount));
-  totRow("Total", `Rs.${inr(total)}`, true);
-  doc.setDrawColor(...LINE);
-  doc.line(sumLeft - 2, sty - 3, W - M - 2, sty - 3);
-  totRow("Balance Due", `Rs.${inr(total)}`, true);
-
-  // Left: total in words + notes
-  let ly = ry + 6;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...TEXT);
-  doc.text("Total In Words", M + 3, ly); ly += 5;
-  doc.setFont("helvetica", "bolditalic");
-  const wLines = doc.splitTextToSize(numToWords(total), W / 2 - M - 6);
-  doc.text(wLines, M + 3, ly); ly += wLines.length * 4 + 5;
-
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...BLUE);
-  if (opts.customerNotes) {
-    const nLines = doc.splitTextToSize(opts.customerNotes, W / 2 - M - 6);
-    doc.text(nLines, M + 3, ly); ly += nLines.length * 4 + 5;
-  }
-
-  // Terms & conditions full width below
-  let footY = Math.max(ly, sty) + 6;
-  if (opts.termsAndConditions) {
-    if (footY > H - 30) { doc.addPage(); footY = M + 10; }
+  let yy = totTop + 6;
+  rows.forEach(([k, v]) => {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(...BLUE);
-    const tLines = doc.splitTextToSize(opts.termsAndConditions, W - 2 * M - 6);
-    doc.text(tLines, M + 3, footY);
+    doc.setTextColor(...MUTED);
+    doc.text(k, totX + 4, yy);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...TEXT);
+    doc.text(v, totX + totW - 4, yy, { align: "right" });
+    yy += 5.5;
+  });
+
+  // Total bar
+  const barY = totTop + rowsH + 2;
+  doc.setFillColor(...BRAND);
+  doc.roundedRect(totX, barY, totW, totalBarH, 1.5, 1.5, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Total", totX + 4, barY + 6.6);
+  doc.text(`Rs. ${inr(total)}`, totX + totW - 4, barY + 6.6, { align: "right" });
+
+  // Left: total in words
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("AMOUNT IN WORDS", M, ry + 12);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...TEXT);
+  const wLines = doc.splitTextToSize(numToWords(total), totX - M - 6);
+  doc.text(wLines, M, ry + 17);
+
+  // ===== Terms & Conditions =====
+  let footY = Math.max(totTop + cardH, ry + 17 + wLines.length * 4) + 10;
+  if (opts.termsAndConditions) {
+    if (footY > H - 40) { doc.addPage(); footY = M + 10; }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...BRAND);
+    doc.text("TERMS & CONDITIONS", M, footY);
+    doc.setDrawColor(...LINE);
+    doc.line(M, footY + 1.5, W - M, footY + 1.5);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    const tLines = doc.splitTextToSize(opts.termsAndConditions, W - 2 * M);
+    doc.text(tLines, M, footY + 6);
+    footY += 6 + tLines.length * 3.8;
   }
+
+  // ===== Footer =====
+  doc.setFillColor(...BRAND);
+  doc.rect(0, H - 8, W, 8, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Thank you for choosing Cradlewell — caring for mother & baby.", W / 2, H - 3, { align: "center" });
 
   doc.save(opts.fileName);
 }
