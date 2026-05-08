@@ -57,7 +57,7 @@ function PipelinePage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-medium leading-tight">{l.name}</div>
-                        {(l.notes || l.callNotes || l.whatsappNotes) && (
+                        {l.notes && l.notes.trim() && (
                           <TooltipProvider delayDuration={100}>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -69,9 +69,7 @@ function PipelinePage() {
                                 </span>
                               </TooltipTrigger>
                               <TooltipContent side="left" className="max-w-xs whitespace-pre-wrap text-xs">
-                                {[l.notes, l.callNotes && `Call: ${l.callNotes}`, l.whatsappNotes && `WA: ${l.whatsappNotes}`]
-                                  .filter(Boolean)
-                                  .join("\n")}
+                                {l.notes}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -80,8 +78,7 @@ function PipelinePage() {
                       <div className="mt-1 text-xs text-muted-foreground">
                         {l.serviceRequired} · {l.city ?? "-"}
                       </div>
-                      <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>{l.owner}</span>
+                      <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
                         <span className="font-semibold text-primary">{l.closureProbability ?? 0}%</span>
                       </div>
                     </Card>
