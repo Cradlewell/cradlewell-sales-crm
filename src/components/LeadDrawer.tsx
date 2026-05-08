@@ -38,7 +38,6 @@ import {
   CheckCircle2,
   AlarmClock,
   Trophy,
-  X,
   User,
   Baby,
   Briefcase,
@@ -48,6 +47,8 @@ import {
   Stethoscope,
   IndianRupee,
   Sparkles,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -78,6 +79,34 @@ export function LeadDrawer({
 }) {
   const db = useDB();
   const lead = db.leads.find((l) => l.id === leadId);
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState<Record<string, string>>({});
+
+  React.useEffect(() => {
+    if (lead) {
+      setForm({
+        name: lead.name ?? "",
+        phone: lead.phone ?? "",
+        whatsapp: lead.whatsapp ?? "",
+        source: lead.source ?? "",
+        hospitalName: lead.hospitalName ?? "",
+        babyBirthStageStatus: lead.babyBirthStageStatus ?? "",
+        babyAge: lead.babyAge ?? lead.babyAgeOrMonth ?? "",
+        currentWeight: lead.currentWeight ?? "",
+        serviceRequired: lead.serviceRequired ?? "",
+        preferredShift: lead.preferredShift ?? "",
+        shiftHoursCount: lead.shiftHoursCount ? String(lead.shiftHoursCount) : "",
+        shiftTime: lead.shiftTime ?? "",
+        careStartDate: lead.careStartDate ? String(lead.careStartDate).slice(0, 10) : "",
+        serviceDays: lead.serviceDays ? String(lead.serviceDays) : "",
+        budget: lead.budget ? String(lead.budget) : "",
+        area: lead.area ?? "",
+        city: lead.city ?? "",
+        address: lead.address ?? "",
+      });
+      setEditing(false);
+    }
+  }, [lead?.id]);
 
   if (!lead) {
     return (
@@ -86,6 +115,31 @@ export function LeadDrawer({
       </Sheet>
     );
   }
+
+  const setF = (k: string, v: string) => setForm((s) => ({ ...s, [k]: v }));
+  const saveEdits = () => {
+    api.updateLead(lead.id, {
+      name: form.name,
+      phone: form.phone,
+      whatsapp: form.whatsapp || form.phone,
+      hospitalName: form.hospitalName || undefined,
+      babyBirthStageStatus: form.babyBirthStageStatus || undefined,
+      babyAge: form.babyAge || undefined,
+      currentWeight: form.currentWeight || undefined,
+      serviceRequired: form.serviceRequired,
+      preferredShift: (form.preferredShift || undefined) as never,
+      shiftHoursCount: form.shiftHoursCount ? Number(form.shiftHoursCount) : undefined,
+      shiftTime: form.shiftTime || undefined,
+      careStartDate: form.careStartDate || undefined,
+      serviceDays: form.serviceDays ? Number(form.serviceDays) : undefined,
+      budget: form.budget ? Number(form.budget) : undefined,
+      area: form.area || undefined,
+      city: form.city || undefined,
+      address: form.address || undefined,
+    } as never);
+    setEditing(false);
+    toast.success("Lead updated");
+  };
 
   const followups = db.followups.filter((f) => f.leadId === lead.id);
   const quotations = db.quotations.filter((q) => q.leadId === lead.id);
@@ -128,15 +182,35 @@ export function LeadDrawer({
                   </div>
                 </div>
               </div>
-              <button onClick={onClose} className="rounded-md p-1 hover:bg-white/15">
-                <X className="h-4 w-4" />
-              </button>
             </div>
           </SheetTitle>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-1 text-[11px] font-medium">
               <Sparkles className="h-3 w-3" /> {lead.stage}
             </span>
+            {editing ? (
+              <>
+                <button
+                  onClick={saveEdits}
+                  className="ml-auto inline-flex items-center gap-1 rounded-full bg-white px-3 py-1 text-[11px] font-semibold text-primary hover:bg-white/90"
+                >
+                  <Check className="h-3 w-3" /> Save
+                </button>
+                <button
+                  onClick={() => setEditing(false)}
+                  className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium hover:bg-white/25"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setEditing(true)}
+                className="ml-auto inline-flex items-center gap-1 rounded-full bg-white/20 px-3 py-1 text-[11px] font-medium hover:bg-white/30"
+              >
+                <Pencil className="h-3 w-3" /> Edit
+              </button>
+            )}
           </div>
         </SheetHeader>
 
@@ -163,8 +237,9 @@ export function LeadDrawer({
 
             <TabsContent value="profile" className="space-y-3">
               <Section icon={<User className="h-4 w-4" />} title="Lead info">
-                <Info label="Name" value={lead.name} />
-                <Info label="Phone" value={lead.phone} />
+                <EditField label="Name" editing={editing} value={form.name} display={lead.name} onChange={(v)=>setF("name",v)} />
+                <EditField label="Phone" editing={editing} value={form.phone} display={lead.phone} onChange={(v)=>setF("phone",v)} />
+                <EditField label="WhatsApp" editing={editing} value={form.whatsapp} display={lead.whatsapp} onChange={(v)=>setF("whatsapp",v)} />
                 <Info label="Source" value={lead.source} />
                 <Info label="Lead date" value={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy")} />
                 <Info label="Lead time" value={format(new Date(lead.leadDate ?? lead.createdAt), "p")} />
@@ -173,26 +248,26 @@ export function LeadDrawer({
 
               <Section icon={<Baby className="h-4 w-4" />} title="Baby details">
                 <Info label="Status" value={lead.babyStatus} />
-                <Info label="Hospital" value={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} />
-                <Info label="Birth stage / status" value={lead.babyBirthStageStatus ?? "-"} />
-                <Info label="Baby age" value={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} />
-                <Info label="Current weight" value={lead.currentWeight ?? "-"} />
+                <EditField label="Hospital" editing={editing} value={form.hospitalName} display={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} onChange={(v)=>setF("hospitalName",v)} />
+                <EditField label="Birth stage / status" editing={editing} value={form.babyBirthStageStatus} display={lead.babyBirthStageStatus ?? "-"} onChange={(v)=>setF("babyBirthStageStatus",v)} />
+                <EditField label="Baby age" editing={editing} value={form.babyAge} display={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} onChange={(v)=>setF("babyAge",v)} />
+                <EditField label="Current weight" editing={editing} value={form.currentWeight} display={lead.currentWeight ?? "-"} onChange={(v)=>setF("currentWeight",v)} />
               </Section>
 
               <Section icon={<Briefcase className="h-4 w-4" />} title="Service & shift">
-                <Info label="Service" value={lead.serviceRequired} />
-                <Info label="Shift type" value={lead.preferredShift ?? "-"} />
-                <Info label="Shift hours" value={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} icon={<Clock className="h-3 w-3" />} />
-                <Info label="Shift time" value={lead.shiftTime ?? "-"} />
-                <Info label="Care start date" value={lead.careStartDate ? format(new Date(lead.careStartDate), "dd MMM yyyy") : "-"} icon={<CalendarDays className="h-3 w-3" />} />
-                <Info label="Service days" value={lead.serviceDays ? `${lead.serviceDays} days` : "-"} />
-                <Info label="Budget" value={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} icon={<IndianRupee className="h-3 w-3" />} />
+                <EditField label="Service" editing={editing} value={form.serviceRequired} display={lead.serviceRequired} onChange={(v)=>setF("serviceRequired",v)} />
+                <EditField label="Shift type" editing={editing} value={form.preferredShift} display={lead.preferredShift ?? "-"} onChange={(v)=>setF("preferredShift",v)} />
+                <EditField label="Shift hours" editing={editing} value={form.shiftHoursCount} display={lead.shiftHoursCount ? `${lead.shiftHoursCount}h` : "-"} icon={<Clock className="h-3 w-3" />} type="number" onChange={(v)=>setF("shiftHoursCount",v)} />
+                <EditField label="Shift time" editing={editing} value={form.shiftTime} display={lead.shiftTime ?? "-"} onChange={(v)=>setF("shiftTime",v)} />
+                <EditField label="Care start date" editing={editing} value={form.careStartDate} display={lead.careStartDate ? format(new Date(lead.careStartDate), "dd MMM yyyy") : "-"} icon={<CalendarDays className="h-3 w-3" />} type="date" onChange={(v)=>setF("careStartDate",v)} />
+                <EditField label="Service days" editing={editing} value={form.serviceDays} display={lead.serviceDays ? `${lead.serviceDays} days` : "-"} type="number" onChange={(v)=>setF("serviceDays",v)} />
+                <EditField label="Budget" editing={editing} value={form.budget} display={lead.budget ? `₹${lead.budget.toLocaleString()}` : "-"} icon={<IndianRupee className="h-3 w-3" />} type="number" onChange={(v)=>setF("budget",v)} />
               </Section>
 
               <Section icon={<MapPin className="h-4 w-4" />} title="Location">
-                <Info label="Area" value={lead.area ?? "-"} />
-                <Info label="City" value={lead.city ?? "-"} />
-                <Info label="Address" value={lead.address ?? "-"} full />
+                <EditField label="Area" editing={editing} value={form.area} display={lead.area ?? "-"} onChange={(v)=>setF("area",v)} />
+                <EditField label="City" editing={editing} value={form.city} display={lead.city ?? "-"} onChange={(v)=>setF("city",v)} />
+                <EditField label="Address" editing={editing} value={form.address} display={lead.address ?? "-"} full onChange={(v)=>setF("address",v)} />
               </Section>
 
               <div>
@@ -368,6 +443,39 @@ function Info({
         {icon ? <span className="text-muted-foreground">{icon}</span> : null}
         <span className="truncate">{value}</span>
       </div>
+    </div>
+  );
+}
+
+function EditField({
+  label,
+  editing,
+  value,
+  display,
+  onChange,
+  icon,
+  full,
+  type = "text",
+}: {
+  label: string;
+  editing: boolean;
+  value: string;
+  display: React.ReactNode;
+  onChange: (v: string) => void;
+  icon?: React.ReactNode;
+  full?: boolean;
+  type?: string;
+}) {
+  if (!editing) return <Info label={label} value={display} icon={icon} full={full} />;
+  return (
+    <div className={full ? "sm:col-span-2" : undefined}>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <Input
+        className="mt-1 h-8"
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
