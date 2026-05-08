@@ -116,29 +116,29 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   doc.rect(0, 0, W, 4, "F");
 
   // ===== Header (logo + company + TAX INVOICE) =====
-  // Logo circle
-  doc.setFillColor(...BRAND_SOFT);
-  doc.circle(M + 8, M + 10, 8, "F");
-  doc.setTextColor(...BRAND);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("CW", M + 8, M + 12, { align: "center" });
+  try {
+    const logo = await loadImage(logoUrl);
+    doc.addImage(logo, "JPEG", M, M + 2, 18, 18);
+  } catch {
+    doc.setFillColor(...BRAND_SOFT);
+    doc.circle(M + 9, M + 11, 9, "F");
+  }
 
   // Company name
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...TEXT);
-  doc.text(COMPANY.name, M + 20, M + 6);
+  doc.text(COMPANY.name, M + 22, M + 6);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
   let hy = M + 11;
-  COMPANY.addr.forEach((l) => { doc.text(l, M + 20, hy); hy += 3.6; });
+  COMPANY.addr.forEach((l) => { doc.text(l, M + 22, hy); hy += 3.6; });
   doc.setTextColor(...BRAND);
-  doc.text(COMPANY.gstin, M + 20, hy); hy += 3.6;
-  doc.text(COMPANY.email, M + 20, hy); hy += 3.6;
-  doc.text(COMPANY.web, M + 20, hy);
+  doc.text(COMPANY.gstin, M + 22, hy); hy += 3.6;
+  doc.text(COMPANY.email, M + 22, hy); hy += 3.6;
+  doc.text(COMPANY.web, M + 22, hy);
 
   // TAX INVOICE title with accent line
   doc.setFont("helvetica", "bold");
@@ -228,17 +228,17 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
 
   // ===== Items table =====
   const tY = btY + cardH + 8;
-  // Column layout (totals 186mm wide content area)
-  const cx = {
-    no:    { x: M,           w: 8,  align: "center" as const },
-    desc:  { x: M + 8,       w: 76, align: "left"   as const },
-    qty:   { x: M + 84,      w: 14, align: "right"  as const },
-    rate:  { x: M + 98,      w: 22, align: "right"  as const },
-    cgstP: { x: M + 120,     w: 12, align: "right"  as const },
-    cgstA: { x: M + 132,     w: 18, align: "right"  as const },
-    sgstP: { x: M + 150,     w: 12, align: "right"  as const },
-    sgstA: { x: M + 162,     w: 18, align: "right"  as const },
-    amt:   { x: M + 180,     w: 26, align: "right"  as const },
+  // Column layout (content area = 186mm). Sum of widths must equal 186.
+  const cx: Record<string, Col> = {
+    no:    { x: M,        w: 8,  align: "center" },
+    desc:  { x: M + 8,    w: 70, align: "left"   },
+    qty:   { x: M + 78,   w: 12, align: "right"  },
+    rate:  { x: M + 90,   w: 20, align: "right"  },
+    cgstP: { x: M + 110,  w: 10, align: "right"  },
+    cgstA: { x: M + 120,  w: 16, align: "right"  },
+    sgstP: { x: M + 136,  w: 10, align: "right"  },
+    sgstA: { x: M + 146,  w: 16, align: "right"  },
+    amt:   { x: M + 162,  w: 24, align: "right"  },
   };
   const tableW = W - 2 * M;
 
@@ -258,7 +258,7 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   doc.setFontSize(8.5);
   doc.setTextColor(255, 255, 255);
   const hRow = tY + 11.2;
-  const hText = (col: typeof cx.no, label: string) => {
+  const hText = (col: Col, label: string) => {
     const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
     doc.text(label, tx, hRow, { align: col.align });
   };
@@ -291,7 +291,7 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
       doc.rect(M, ry - 4, tableW, rowH, "F");
     }
 
-    const cell = (col: typeof cx.no, txt: string | string[], color: [number, number, number] = TEXT) => {
+    const cell = (col: Col, txt: string | string[], color: [number, number, number] = TEXT) => {
       doc.setTextColor(...color);
       const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
       doc.text(txt, tx, ry, { align: col.align });
