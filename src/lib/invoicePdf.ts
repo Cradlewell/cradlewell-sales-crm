@@ -53,13 +53,15 @@ const COMPANY = {
   web: "https://www.cradlewell.com/",
 };
 
+// All text is black. Colors below are only used for fills, borders & bands.
 const BRAND: [number, number, number] = [88, 80, 236];      // indigo-violet
 const BRAND_DK: [number, number, number] = [55, 48, 163];
-const TEXT: [number, number, number] = [33, 37, 51];
-const MUTED: [number, number, number] = [120, 124, 140];
-const LINE: [number, number, number] = [225, 228, 235];
+const TEXT: [number, number, number] = [0, 0, 0];
+const MUTED: [number, number, number] = [0, 0, 0];
+const LINE: [number, number, number] = [210, 214, 224];
 const SOFT_BG: [number, number, number] = [245, 246, 252];
 const ACCENT_BG: [number, number, number] = [238, 236, 254];
+const GOLD: [number, number, number] = [196, 164, 88];
 
 function inr(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -114,7 +116,9 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
 
   // ===== Top brand band =====
   doc.setFillColor(...BRAND);
-  doc.rect(0, 0, W, 4, "F");
+  doc.rect(0, 0, W, 5, "F");
+  doc.setFillColor(...GOLD);
+  doc.rect(0, 5, W, 0.8, "F");
 
   // ===== Header =====
   const headerY = 10;
@@ -124,31 +128,32 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   } catch { /* ignore */ }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.setTextColor(...TEXT);
+  doc.setFontSize(12.5);
+  doc.setTextColor(0, 0, 0);
   doc.text(COMPANY.name, M + 24, headerY + 5);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
+  doc.setTextColor(0, 0, 0);
   let hy = headerY + 10;
   COMPANY.addr.forEach((l) => { doc.text(l, M + 24, hy); hy += 3.6; });
-  doc.setTextColor(...BRAND_DK);
+  doc.setFont("helvetica", "bold");
   doc.text(COMPANY.gstin, M + 24, hy); hy += 3.6;
+  doc.setFont("helvetica", "normal");
   doc.text(`${COMPANY.email}  •  ${COMPANY.web}`, M + 24, hy);
 
-  // TAX INVOICE pill
+  // TAX INVOICE title (no invoice # below)
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(...BRAND);
-  doc.text("TAX INVOICE", W - M, headerY + 6, { align: "right" });
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...MUTED);
-  doc.text(`Invoice #  `, W - M - 30, headerY + 12, { align: "right" });
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...TEXT);
-  doc.text(opts.invoiceNo, W - M, headerY + 12, { align: "right" });
+  doc.setFontSize(22);
+  doc.setTextColor(0, 0, 0);
+  doc.text("TAX INVOICE", W - M, headerY + 8, { align: "right" });
+  // Decorative underline accents
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(1);
+  doc.line(W - M - 50, headerY + 11, W - M, headerY + 11);
+  doc.setDrawColor(...GOLD);
+  doc.setLineWidth(0.6);
+  doc.line(W - M - 22, headerY + 13, W - M, headerY + 13);
 
   // Divider
   const divY = headerY + 26;
@@ -169,16 +174,24 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     ["Place of Supply", opts.placeOfSupply ?? "Karnataka (29)"],
   ];
   const colW = (W - 2 * M) / metas.length;
-  metas.forEach(([k, v], i) => {
-    const x = M + i * colW + 4;
+  // Add Invoice # as the first meta column
+  const metasAll: [string, string][] = [["Invoice #", opts.invoiceNo], ...metas];
+  const colW2 = (W - 2 * M) / metasAll.length;
+  metasAll.forEach(([k, v], i) => {
+    const x = M + i * colW2 + 4;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(0, 0, 0);
     doc.text(k.toUpperCase(), x, metaY + 6);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(9.5);
-    doc.setTextColor(...TEXT);
+    doc.setTextColor(0, 0, 0);
     doc.text(v, x, metaY + 13);
+    if (i > 0) {
+      doc.setDrawColor(...LINE);
+      doc.setLineWidth(0.2);
+      doc.line(M + i * colW2, metaY + 3, M + i * colW2, metaY + metaH - 3);
+    }
   });
 
   // ===== Bill To / Ship To =====
@@ -194,15 +207,15 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     doc.rect(x, btY, 2.2, btH, "F");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.setTextColor(...BRAND);
+    doc.setTextColor(0, 0, 0);
     doc.text(title, x + 5, btY + 5);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
-    doc.setTextColor(...TEXT);
+    doc.setTextColor(0, 0, 0);
     doc.text(opts.customerName || "—", x + 5, btY + 11);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(0, 0, 0);
     let yy = btY + 16;
     addrLines(addr).forEach((l) => {
       const ll = doc.splitTextToSize(l, cardW - 8);
@@ -277,18 +290,18 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
       doc.setFillColor(...SOFT_BG);
       doc.rect(M, ry - 4, tableW, rowH, "F");
     }
-    const cell = (col: Col, txt: string | string[], color: [number, number, number] = TEXT) => {
-      doc.setTextColor(...color);
+    const cell = (col: Col, txt: string | string[]) => {
+      doc.setTextColor(0, 0, 0);
       const tx = col.align === "right" ? col.x + col.w - 1 : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
       doc.text(txt, tx, ry, { align: col.align });
     };
-    cell(cx.no,    String(idx + 1), MUTED);
-    cell(cx.desc,  dl,              TEXT);
+    cell(cx.no,    String(idx + 1));
+    cell(cx.desc,  dl);
     cell(cx.qty,   String(it.qty));
     cell(cx.rate,  inr(it.rate));
-    cell(cx.cgstP, it.cgstPct ? `${it.cgstPct}%` : "-", MUTED);
+    cell(cx.cgstP, it.cgstPct ? `${it.cgstPct}%` : "-");
     cell(cx.cgstA, it.cgstPct ? inr(cgstA) : "-");
-    cell(cx.sgstP, it.sgstPct ? `${it.sgstPct}%` : "-", MUTED);
+    cell(cx.sgstP, it.sgstPct ? `${it.sgstPct}%` : "-");
     cell(cx.sgstA, it.sgstPct ? inr(sgstA) : "-");
     doc.setFont("helvetica", "bold");
     cell(cx.amt,   inr(amt));
@@ -333,32 +346,34 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   let yy = totTop + 6;
   rows.forEach(([k, v]) => {
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(0, 0, 0);
     doc.text(k, totX + 4, yy);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...TEXT);
+    doc.setTextColor(0, 0, 0);
     doc.text(v, totX + totW - 4, yy, { align: "right" });
     yy += 5.5;
   });
 
-  // Total bar
+  // Total bar — black text on light band with brand stripe
   const barY = totTop + rowsH + 2;
-  doc.setFillColor(...BRAND);
+  doc.setFillColor(...ACCENT_BG);
   doc.roundedRect(totX, barY, totW, totalBarH, 1.5, 1.5, "F");
+  doc.setFillColor(...BRAND);
+  doc.rect(totX, barY, 2.2, totalBarH, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10.5);
-  doc.setTextColor(255, 255, 255);
-  doc.text("Total", totX + 4, barY + 6.6);
+  doc.setFontSize(11);
+  doc.setTextColor(0, 0, 0);
+  doc.text("Total", totX + 5, barY + 6.6);
   doc.text(`Rs. ${inr(total)}`, totX + totW - 4, barY + 6.6, { align: "right" });
 
   // Left: total in words
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
+  doc.setTextColor(0, 0, 0);
   doc.text("AMOUNT IN WORDS", M, ry + 12);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
-  doc.setTextColor(...TEXT);
+  doc.setTextColor(0, 0, 0);
   const wLines = doc.splitTextToSize(numToWords(total), totX - M - 6);
   doc.text(wLines, M, ry + 17);
 
@@ -367,25 +382,31 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   if (opts.termsAndConditions) {
     if (footY > H - 40) { doc.addPage(); footY = M + 10; }
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.setTextColor(...BRAND);
+    doc.setFontSize(8.5);
+    doc.setTextColor(0, 0, 0);
     doc.text("TERMS & CONDITIONS", M, footY);
+    doc.setDrawColor(...BRAND);
+    doc.setLineWidth(0.6);
+    doc.line(M, footY + 1.5, M + 40, footY + 1.5);
     doc.setDrawColor(...LINE);
-    doc.line(M, footY + 1.5, W - M, footY + 1.5);
+    doc.setLineWidth(0.2);
+    doc.line(M + 40, footY + 1.5, W - M, footY + 1.5);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
-    doc.setTextColor(...MUTED);
+    doc.setTextColor(0, 0, 0);
     const tLines = doc.splitTextToSize(opts.termsAndConditions, W - 2 * M);
     doc.text(tLines, M, footY + 6);
     footY += 6 + tLines.length * 3.8;
   }
 
   // ===== Footer =====
+  doc.setFillColor(...GOLD);
+  doc.rect(0, H - 9, W, 0.8, "F");
   doc.setFillColor(...BRAND);
   doc.rect(0, H - 8, W, 8, "F");
-  doc.setFont("helvetica", "normal");
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(8);
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(0, 0, 0);
   doc.text("Thank you for choosing Cradlewell — caring for mother & baby.", W / 2, H - 3, { align: "center" });
 
   doc.save(opts.fileName);
