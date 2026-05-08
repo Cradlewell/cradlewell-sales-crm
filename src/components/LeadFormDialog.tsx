@@ -197,7 +197,7 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
             <Select value={form.preferredShift} onValueChange={(v) => set("preferredShift", v as Shift)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["Day (12h)","Night (12h)","Full Day (24h)","Custom"].map(s=>(
+                {["Day","Night"].map(s=>(
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
@@ -235,14 +235,6 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
           </Field>
           <Field label="Budget (₹)">
             <Input type="number" value={form.budget} onChange={(e) => set("budget", e.target.value)} />
-          </Field>
-          <Field label="Lead owner">
-            <Select value={form.owner} onValueChange={(v) => set("owner", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {["Aarav","Priya","Neha"].map(s=>(<SelectItem key={s} value={s}>{s}</SelectItem>))}
-              </SelectContent>
-            </Select>
           </Field>
           <div className="sm:col-span-2">
             <Label className="mb-1 block text-xs">Requirement notes</Label>
