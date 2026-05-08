@@ -96,7 +96,7 @@ function InvoiceGeneratorPage() {
 
   const updateItem = (idx: number, patch: Partial<InvoiceItem>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-  const addRow = () => setItems((p) => [...p, { description: "", qty: 1, rate: 0, taxPct: 0 }]);
+  const addRow = () => setItems((p) => [...p, { description: "", qty: 1, rate: 0, cgstPct: 0, sgstPct: 0 }]);
   const removeRow = (i: number) => setItems((p) => p.filter((_, idx) => idx !== i));
 
   const customerName = isNewCustomer ? newName : (customer?.name ?? "");
@@ -226,7 +226,8 @@ function InvoiceGeneratorPage() {
                 <th className="px-3 py-2 text-left">Item Details</th>
                 <th className="px-3 py-2 text-right w-24">Qty</th>
                 <th className="px-3 py-2 text-right w-28">Rate</th>
-                <th className="px-3 py-2 text-right w-24">CGST/SGST %</th>
+                <th className="px-3 py-2 text-right w-20">CGST %</th>
+                <th className="px-3 py-2 text-right w-20">SGST %</th>
                 <th className="px-3 py-2 text-right w-32">Amount</th>
                 <th className="w-10"></th>
               </tr>
@@ -239,7 +240,8 @@ function InvoiceGeneratorPage() {
                   </td>
                   <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.qty} onChange={(e) => updateItem(idx, { qty: Number(e.target.value) })} /></td>
                   <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.rate} onChange={(e) => updateItem(idx, { rate: Number(e.target.value) })} /></td>
-                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.taxPct} onChange={(e) => updateItem(idx, { taxPct: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.cgstPct} onChange={(e) => updateItem(idx, { cgstPct: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2"><Input type="number" min={0} className="text-right" value={it.sgstPct} onChange={(e) => updateItem(idx, { sgstPct: Number(e.target.value) })} /></td>
                   <td className="px-3 py-2 text-right font-medium">₹{(it.qty * it.rate).toLocaleString("en-IN")}</td>
                   <td className="px-2 py-2">
                     {items.length > 1 && (
