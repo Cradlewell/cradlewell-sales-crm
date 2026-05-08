@@ -78,9 +78,6 @@ function PipelinePage() {
                       <div className="mt-1 text-xs text-muted-foreground">
                         {l.serviceRequired} · {l.city ?? "-"}
                       </div>
-                      <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
-                        <span className="font-semibold text-primary">{l.closureProbability ?? 0}%</span>
-                      </div>
                     </Card>
                   ))}
                   {items.length === 0 && (
