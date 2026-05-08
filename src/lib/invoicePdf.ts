@@ -52,9 +52,12 @@ const COMPANY = {
   web: "https://www.cradlewell.com/",
 };
 
-const BLUE: [number, number, number] = [29, 78, 216];
-const TEXT: [number, number, number] = [40, 40, 40];
-const MUTED: [number, number, number] = [110, 110, 110];
+const BRAND: [number, number, number] = [29, 78, 216];     // primary blue
+const BRAND_SOFT: [number, number, number] = [239, 244, 255];
+const TEXT: [number, number, number] = [33, 37, 41];
+const MUTED: [number, number, number] = [120, 125, 135];
+const LINE: [number, number, number] = [220, 224, 230];
+const HEAD_BG: [number, number, number] = [245, 247, 250];
 
 function inr(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -63,18 +66,18 @@ function inr(n: number) {
 function numToWords(num: number): string {
   const a = ["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
   const b = ["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
-  const inWords = (n: number): string => {
+  const w = (n: number): string => {
     if (n < 20) return a[n];
     if (n < 100) return b[Math.floor(n/10)] + (n%10 ? " " + a[n%10] : "");
-    if (n < 1000) return a[Math.floor(n/100)] + " Hundred" + (n%100 ? " " + inWords(n%100) : "");
-    if (n < 100000) return inWords(Math.floor(n/1000)) + " Thousand" + (n%1000 ? " " + inWords(n%1000) : "");
-    if (n < 10000000) return inWords(Math.floor(n/100000)) + " Lakh" + (n%100000 ? " " + inWords(n%100000) : "");
-    return inWords(Math.floor(n/10000000)) + " Crore" + (n%10000000 ? " " + inWords(n%10000000) : "");
+    if (n < 1000) return a[Math.floor(n/100)] + " Hundred" + (n%100 ? " " + w(n%100) : "");
+    if (n < 100000) return w(Math.floor(n/1000)) + " Thousand" + (n%1000 ? " " + w(n%1000) : "");
+    if (n < 10000000) return w(Math.floor(n/100000)) + " Lakh" + (n%100000 ? " " + w(n%100000) : "");
+    return w(Math.floor(n/10000000)) + " Crore" + (n%10000000 ? " " + w(n%10000000) : "");
   };
-  const rupees = Math.floor(num);
-  const paise = Math.round((num - rupees) * 100);
-  let out = "Indian Rupee " + (inWords(rupees) || "Zero");
-  if (paise) out += " and " + inWords(paise) + " Paise";
+  const r = Math.floor(num);
+  const p = Math.round((num - r) * 100);
+  let out = "Indian Rupee " + (w(r) || "Zero");
+  if (p) out += " and " + w(p) + " Paise";
   return out + " Only";
 }
 
@@ -92,211 +95,320 @@ function addrLines(a: Address): string[] {
 
 export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const W = 210, M = 12;
+  const W = 210, H = 297, M = 12;
 
-  // Outer border
-  doc.setDrawColor(180);
-  doc.setLineWidth(0.3);
-  doc.rect(M, M, W - 2 * M, 273);
+  // ===== Top brand bar =====
+  doc.setFillColor(...BRAND);
+  doc.rect(0, 0, W, 4, "F");
 
-  // Header
+  // ===== Header (logo + company + TAX INVOICE) =====
+  // Logo circle
+  doc.setFillColor(...BRAND_SOFT);
+  doc.circle(M + 8, M + 10, 8, "F");
+  doc.setTextColor(...BRAND);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("CW", M + 8, M + 12, { align: "center" });
+
+  // Company name
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.setTextColor(...TEXT);
-  doc.text(COMPANY.name, M + 28, M + 8);
+  doc.text(COMPANY.name, M + 20, M + 6);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(...MUTED);
-  let hy = M + 13;
-  COMPANY.addr.forEach((l) => { doc.text(l, M + 28, hy); hy += 4; });
-  doc.setTextColor(...BLUE);
-  doc.text(COMPANY.gstin, M + 28, hy); hy += 4;
-  doc.text(COMPANY.email, M + 28, hy); hy += 4;
-  doc.text(COMPANY.web, M + 28, hy);
+  let hy = M + 11;
+  COMPANY.addr.forEach((l) => { doc.text(l, M + 20, hy); hy += 3.6; });
+  doc.setTextColor(...BRAND);
+  doc.text(COMPANY.gstin, M + 20, hy); hy += 3.6;
+  doc.text(COMPANY.email, M + 20, hy); hy += 3.6;
+  doc.text(COMPANY.web, M + 20, hy);
 
-  // Title
+  // TAX INVOICE title with accent line
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...BRAND);
+  doc.text("TAX INVOICE", W - M, M + 12, { align: "right" });
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.6);
+  doc.line(W - M - 50, M + 14, W - M, M + 14);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(20);
-  doc.setTextColor(...TEXT);
-  doc.text("TAX INVOICE", W - M - 4, M + 20, { align: "right" });
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  doc.text(`Invoice #${opts.invoiceNo}`, W - M, M + 19, { align: "right" });
 
-  // Invoice meta box
-  const metaY = M + 38;
-  doc.setDrawColor(200);
-  doc.line(M, metaY, W - M, metaY);
-  doc.line(M, metaY + 26, W - M, metaY + 26);
-  doc.line(W / 2, metaY, W / 2, metaY + 26);
+  // Divider
+  doc.setDrawColor(...LINE);
+  doc.setLineWidth(0.3);
+  doc.line(M, M + 32, W - M, M + 32);
 
+  // ===== Meta block (two columns) =====
+  const metaY = M + 36;
   doc.setFontSize(9);
-  const labelX = M + 3, colonX = M + 28, valX = M + 30;
-  const rows = [
-    ["#", opts.invoiceNo, true],
-    ["Invoice Date", format(opts.invoiceDate, "dd/MM/yyyy"), true],
-    ["Terms", opts.terms ?? "Due on Receipt", true],
-    ["Due Date", format(opts.dueDate, "dd/MM/yyyy"), true],
-  ] as const;
-  rows.forEach(([k, v, bold], i) => {
-    const y = metaY + 6 + i * 5;
-    doc.setTextColor(...MUTED);
+  const metaRows: [string, string][] = [
+    ["Invoice #", opts.invoiceNo],
+    ["Invoice Date", format(opts.invoiceDate, "dd MMM yyyy")],
+    ["Terms", opts.terms ?? "Due on Receipt"],
+    ["Due Date", format(opts.dueDate, "dd MMM yyyy")],
+  ];
+  metaRows.forEach(([k, v], i) => {
+    const y = metaY + i * 5;
     doc.setFont("helvetica", "normal");
-    doc.text(k, labelX, y);
-    doc.text(":", colonX, y);
+    doc.setTextColor(...MUTED);
+    doc.text(k, M, y);
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(...TEXT);
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.text(v, valX, y);
+    doc.text(v, M + 26, y);
   });
+
+  // Right meta: Place of supply
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...MUTED);
-  doc.text("Place Of Supply", W / 2 + 3, metaY + 6);
-  doc.text(":", W / 2 + 36, metaY + 6);
+  doc.text("Place of Supply", W / 2 + 4, metaY);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...TEXT);
-  doc.text(opts.placeOfSupply ?? "Karnataka (29)", W / 2 + 38, metaY + 6);
+  doc.text(opts.placeOfSupply ?? "Karnataka (29)", W / 2 + 32, metaY);
 
-  // Bill To / Ship To
-  const btY = metaY + 26;
-  doc.line(W / 2, btY, W / 2, btY + 32);
-  doc.line(M, btY + 32, W - M, btY + 32);
+  // ===== Bill To / Ship To cards =====
+  const btY = metaY + 24;
+  const cardH = 38;
+  const cardW = (W - 2 * M - 4) / 2;
 
-  doc.setFontSize(9);
+  // Card backgrounds
+  doc.setFillColor(...HEAD_BG);
+  doc.roundedRect(M, btY, cardW, cardH, 1.5, 1.5, "F");
+  doc.roundedRect(M + cardW + 4, btY, cardW, cardH, 1.5, 1.5, "F");
+
+  // Labels
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...BLUE);
-  doc.text(opts.customerName || "—", M + 3, btY + 5);
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("BILL TO", M + 3, btY + 5);
+  doc.text("SHIP TO", M + cardW + 7, btY + 5);
+
+  // Customer name
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(...BRAND);
+  doc.text(opts.customerName || "—", M + 3, btY + 11);
+  doc.text(opts.customerName || "—", M + cardW + 7, btY + 11);
+
+  // Addresses
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
   doc.setTextColor(...TEXT);
-  let by = btY + 10;
+  let by = btY + 16;
   addrLines(opts.billingAddress).forEach((l) => {
-    const ll = doc.splitTextToSize(l, 90);
+    const ll = doc.splitTextToSize(l, cardW - 6);
     doc.text(ll, M + 3, by);
     by += ll.length * 4;
   });
-
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...TEXT);
-  let sy = btY + 5;
+  let sy = btY + 16;
   addrLines(opts.shippingAddress).forEach((l) => {
-    const ll = doc.splitTextToSize(l, 90);
-    doc.text(ll, W / 2 + 3, sy);
+    const ll = doc.splitTextToSize(l, cardW - 6);
+    doc.text(ll, M + cardW + 7, sy);
     sy += ll.length * 4;
   });
 
-  // Item table
-  const tY = btY + 32;
-  const headerH = 10;
-  doc.setFillColor(235, 235, 235);
-  doc.rect(M, tY, W - 2 * M, headerH, "F");
-
-  // Columns
-  const cols = {
-    no: M + 4,
-    desc: M + 14,
-    qty: M + 92,
-    rate: M + 110,
-    cgstP: M + 130,
-    cgstA: M + 142,
-    sgstP: M + 158,
-    sgstA: M + 170,
-    amt: W - M - 4,
+  // ===== Items table =====
+  const tY = btY + cardH + 8;
+  // Column layout (totals 186mm wide content area)
+  const cx = {
+    no:    { x: M,           w: 8,  align: "center" as const },
+    desc:  { x: M + 8,       w: 76, align: "left"   as const },
+    qty:   { x: M + 84,      w: 14, align: "right"  as const },
+    rate:  { x: M + 98,      w: 22, align: "right"  as const },
+    cgstP: { x: M + 120,     w: 12, align: "right"  as const },
+    cgstA: { x: M + 132,     w: 18, align: "right"  as const },
+    sgstP: { x: M + 150,     w: 12, align: "right"  as const },
+    sgstA: { x: M + 162,     w: 18, align: "right"  as const },
+    amt:   { x: M + 180,     w: 26, align: "right"  as const },
   };
+  const tableW = W - 2 * M;
+
+  // Group header band (CGST / SGST grouping)
+  doc.setFillColor(...HEAD_BG);
+  doc.rect(M, tY, tableW, 6, "F");
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(9);
-  doc.setTextColor(...TEXT);
-  // Group headers CGST / SGST
-  doc.text("CGST", M + 130, tY + 4);
-  doc.text("SGST", M + 158, tY + 4);
-  doc.text("#", cols.no, tY + 8, { align: "center" });
-  doc.text("Description", cols.desc, tY + 8);
-  doc.text("Qty", cols.qty, tY + 8, { align: "right" });
-  doc.text("Rate", cols.rate, tY + 8, { align: "right" });
-  doc.text("%", cols.cgstP, tY + 8, { align: "right" });
-  doc.text("Amt", cols.cgstA, tY + 8, { align: "right" });
-  doc.text("%", cols.sgstP, tY + 8, { align: "right" });
-  doc.text("Amt", cols.sgstA, tY + 8, { align: "right" });
-  doc.text("Amount", cols.amt, tY + 8, { align: "right" });
+  doc.setFontSize(7.5);
+  doc.setTextColor(...MUTED);
+  doc.text("CGST", cx.cgstP.x + (cx.cgstP.w + cx.cgstA.w) / 2, tY + 4, { align: "center" });
+  doc.text("SGST", cx.sgstP.x + (cx.sgstP.w + cx.sgstA.w) / 2, tY + 4, { align: "center" });
+
+  // Column header row
+  doc.setFillColor(...BRAND);
+  doc.rect(M, tY + 6, tableW, 8, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  const hRow = tY + 11.2;
+  const hText = (col: typeof cx.no, label: string) => {
+    const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
+    doc.text(label, tx, hRow, { align: col.align });
+  };
+  hText(cx.no, "#");
+  hText(cx.desc, "Description");
+  hText(cx.qty, "Qty");
+  hText(cx.rate, "Rate");
+  hText(cx.cgstP, "%");
+  hText(cx.cgstA, "Amt");
+  hText(cx.sgstP, "%");
+  hText(cx.sgstA, "Amt");
+  hText(cx.amt, "Amount");
 
   // Rows
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...TEXT);
-  let ry = tY + headerH + 6;
+  doc.setFontSize(9);
+  let ry = tY + 14 + 6;
   let subTotal = 0, cgstTotal = 0, sgstTotal = 0;
   opts.items.forEach((it, idx) => {
     const amt = it.qty * it.rate;
     const cgstA = (amt * it.taxPct) / 100;
     const sgstA = (amt * it.taxPct) / 100;
     subTotal += amt; cgstTotal += cgstA; sgstTotal += sgstA;
-    const dl = doc.splitTextToSize(it.description || "—", 72);
-    doc.setTextColor(...BLUE);
-    doc.text(String(idx + 1), cols.no, ry, { align: "center" });
-    doc.text(dl, cols.desc, ry);
-    doc.setTextColor(...TEXT);
-    doc.text(String(it.qty), cols.qty, ry, { align: "right" });
-    doc.text(inr(it.rate), cols.rate, ry, { align: "right" });
-    doc.text(it.taxPct ? `${it.taxPct}%` : "-", cols.cgstP, ry, { align: "right" });
-    doc.text(it.taxPct ? inr(cgstA) : "-", cols.cgstA, ry, { align: "right" });
-    doc.text(it.taxPct ? `${it.taxPct}%` : "-", cols.sgstP, ry, { align: "right" });
-    doc.text(it.taxPct ? inr(sgstA) : "-", cols.sgstA, ry, { align: "right" });
-    doc.text(inr(amt), cols.amt, ry, { align: "right" });
-    ry += Math.max(dl.length * 4, 6) + 2;
-  });
-  ry += 2;
-  doc.setDrawColor(200);
-  doc.line(M, ry, W - M, ry);
+    const dl = doc.splitTextToSize(it.description || "—", cx.desc.w - 2);
+    const rowH = Math.max(dl.length * 4 + 2, 7);
 
-  // Totals + words
+    // Zebra
+    if (idx % 2 === 1) {
+      doc.setFillColor(250, 251, 253);
+      doc.rect(M, ry - 4, tableW, rowH, "F");
+    }
+
+    const cell = (col: typeof cx.no, txt: string | string[], color: [number, number, number] = TEXT) => {
+      doc.setTextColor(...color);
+      const tx = col.align === "right" ? col.x + col.w : col.align === "center" ? col.x + col.w / 2 : col.x + 1;
+      doc.text(txt, tx, ry, { align: col.align });
+    };
+    cell(cx.no, String(idx + 1), MUTED);
+    cell(cx.desc, dl, BRAND);
+    cell(cx.qty, String(it.qty));
+    cell(cx.rate, inr(it.rate));
+    cell(cx.cgstP, it.taxPct ? `${it.taxPct}%` : "-", MUTED);
+    cell(cx.cgstA, it.taxPct ? inr(cgstA) : "-");
+    cell(cx.sgstP, it.taxPct ? `${it.taxPct}%` : "-", MUTED);
+    cell(cx.sgstA, it.taxPct ? inr(sgstA) : "-");
+    cell(cx.amt, inr(amt));
+
+    ry += rowH;
+  });
+
+  // Bottom border on table
+  doc.setDrawColor(...LINE);
+  doc.setLineWidth(0.3);
+  doc.line(M, ry - 2, W - M, ry - 2);
+
+  // ===== Totals + Words side-by-side =====
   const discountAmt = opts.discountIsPct ? (subTotal * opts.discountValue) / 100 : opts.discountValue;
   const total = Math.max(0, subTotal + cgstTotal + sgstTotal - discountAmt - opts.tdsTcsAmount + opts.adjustmentAmount);
 
-  // Right totals box
-  const totalsX = W - M - 75;
-  let ty = ry + 6;
-  doc.setFontSize(9);
-  const totRow = (l: string, v: string, bold = false) => {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setTextColor(...TEXT);
-    doc.text(l, totalsX, ty);
-    doc.text(v, W - M - 4, ty, { align: "right" });
-    ty += 5;
-  };
-  totRow("Sub Total", inr(subTotal));
-  if (cgstTotal > 0) totRow(`CGST`, inr(cgstTotal));
-  if (sgstTotal > 0) totRow(`SGST`, inr(sgstTotal));
-  if (discountAmt > 0) totRow(`Discount${opts.discountIsPct ? ` (${opts.discountValue}%)` : ""}`, "- " + inr(discountAmt));
-  if (opts.tdsTcsAmount > 0) totRow(opts.tdsTcsLabel ?? "TDS", "- " + inr(opts.tdsTcsAmount));
-  if (opts.adjustmentAmount !== 0) totRow(opts.adjustmentLabel || "Adjustment", inr(opts.adjustmentAmount));
-  ty += 1;
-  doc.setDrawColor(200);
-  doc.line(totalsX - 2, ty - 3, W - M - 2, ty - 3);
-  totRow("Total", "Rs. " + inr(total), true);
-  doc.setFont("helvetica", "bold");
-  doc.text("Balance Due", totalsX, ty + 2);
-  doc.text("Rs. " + inr(total), W - M - 4, ty + 2, { align: "right" });
+  const sumY = ry + 6;
+  // Right totals card
+  const sumW = 80;
+  const sumX = W - M - sumW;
 
-  // Left: total in words + notes
-  let ly = ry + 6;
+  // Compute totals rows
+  const tRows: Array<[string, string, "normal" | "bold"]> = [
+    ["Sub Total", inr(subTotal), "normal"],
+  ];
+  if (cgstTotal > 0) tRows.push(["CGST", inr(cgstTotal), "normal"]);
+  if (sgstTotal > 0) tRows.push(["SGST", inr(sgstTotal), "normal"]);
+  if (discountAmt > 0) tRows.push([`Discount${opts.discountIsPct ? ` (${opts.discountValue}%)` : ""}`, "- " + inr(discountAmt), "normal"]);
+  if (opts.tdsTcsAmount > 0) tRows.push([opts.tdsTcsLabel ?? "TDS", "- " + inr(opts.tdsTcsAmount), "normal"]);
+  if (opts.adjustmentAmount !== 0) tRows.push([opts.adjustmentLabel || "Adjustment", inr(opts.adjustmentAmount), "normal"]);
+
+  const sumH = 8 + tRows.length * 6 + 18;
+  doc.setFillColor(...HEAD_BG);
+  doc.roundedRect(sumX, sumY, sumW, sumH, 1.5, 1.5, "F");
+
+  let sty = sumY + 7;
+  doc.setFontSize(9);
+  tRows.forEach(([k, v, weight]) => {
+    doc.setFont("helvetica", weight);
+    doc.setTextColor(...TEXT);
+    doc.text(k, sumX + 4, sty);
+    doc.text(v, sumX + sumW - 4, sty, { align: "right" });
+    sty += 6;
+  });
+
+  // Total + Balance Due block
+  doc.setDrawColor(...LINE);
+  doc.line(sumX + 3, sty - 2, sumX + sumW - 3, sty - 2);
+  sty += 2;
+  doc.setFillColor(...BRAND);
+  doc.rect(sumX, sty - 4, sumW, 10, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text("Total", sumX + 4, sty + 2);
+  doc.text(`Rs. ${inr(total)}`, sumX + sumW - 4, sty + 2, { align: "right" });
+
+  // Balance Due (below)
+  const balY = sty + 12;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...TEXT);
-  doc.text("Total In Words", M + 3, ly); ly += 5;
+  doc.text("Balance Due", sumX + 4, balY);
+  doc.setTextColor(...BRAND);
+  doc.text(`Rs. ${inr(total)}`, sumX + sumW - 4, balY, { align: "right" });
+
+  // ===== Left column: Total in words + Notes =====
+  const leftW = sumX - M - 6;
+  let ly = sumY + 4;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("TOTAL IN WORDS", M, ly); ly += 4;
   doc.setFont("helvetica", "italic");
-  const wLines = doc.splitTextToSize(numToWords(total), 110);
-  doc.text(wLines, M + 3, ly); ly += wLines.length * 4 + 4;
+  doc.setFontSize(9);
+  doc.setTextColor(...TEXT);
+  const wLines = doc.splitTextToSize(numToWords(total), leftW);
+  doc.text(wLines, M, ly); ly += wLines.length * 4 + 6;
 
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...BLUE);
   if (opts.customerNotes) {
-    const nLines = doc.splitTextToSize(opts.customerNotes, 110);
-    doc.text(nLines, M + 3, ly); ly += nLines.length * 4 + 4;
-  }
-  // Use max(ly, ty)
-  let footY = Math.max(ly, ty + 8);
-
-  if (opts.termsAndConditions) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text("NOTES", M, ly); ly += 4;
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...BLUE);
-    const tLines = doc.splitTextToSize(opts.termsAndConditions, W - 2 * M - 6);
-    doc.text(tLines, M + 3, footY);
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT);
+    const nLines = doc.splitTextToSize(opts.customerNotes, leftW);
+    doc.text(nLines, M, ly); ly += nLines.length * 4;
   }
+
+  // ===== Terms & Conditions (full width below) =====
+  let footY = Math.max(ly, sumY + sumH) + 10;
+  if (opts.termsAndConditions) {
+    // Page break safety
+    if (footY > H - 30) {
+      doc.addPage();
+      footY = M + 10;
+    }
+    doc.setDrawColor(...LINE);
+    doc.line(M, footY - 4, W - M, footY - 4);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text("TERMS & CONDITIONS", M, footY); footY += 4;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...TEXT);
+    const tLines = doc.splitTextToSize(opts.termsAndConditions, W - 2 * M);
+    doc.text(tLines, M, footY);
+    footY += tLines.length * 3.8;
+  }
+
+  // ===== Footer =====
+  doc.setDrawColor(...BRAND);
+  doc.setLineWidth(0.5);
+  doc.line(M, H - 12, W - M, H - 12);
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text("Thank you for your business — Cradlewell", W / 2, H - 7, { align: "center" });
 
   doc.save(opts.fileName);
 }
