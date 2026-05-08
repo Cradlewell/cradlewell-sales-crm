@@ -266,7 +266,7 @@ function LeadsPage() {
                     <th
                       key={c.key}
                       style={{ width: c.width, minWidth: c.width, ...(isName ? { left: 0, position: "sticky", zIndex: 30 } : {}) }}
-                      className={`group relative px-3 py-2 bg-muted/60 border-b ${isName ? "shadow-[2px_0_0_0_hsl(var(--border))]" : ""} sticky top-0`}
+                      className={`group relative px-3 py-2 bg-muted/60 border-b ${isName ? "border-r" : ""} sticky top-0`}
                       draggable={!isName}
                       onDragStart={() => onDragStart(c.key)}
                       onDragOver={(e) => { if (!isName) e.preventDefault(); }}
@@ -298,7 +298,7 @@ function LeadsPage() {
                       <td
                         key={c.key}
                         style={{ width: c.width, minWidth: c.width, ...(isName ? { left: 0, position: "sticky", zIndex: 10 } : {}) }}
-                        className={`px-3 py-2 align-top border-b bg-background group-hover:bg-muted/30 ${isName ? "shadow-[2px_0_0_0_hsl(var(--border))]" : "whitespace-nowrap"}`}
+                        className={`px-3 py-2 align-top border-b bg-background group-hover:bg-muted/30 ${isName ? "border-r" : "whitespace-nowrap"}`}
                       >
                         <div className={isName ? "" : "truncate"}>{c.render(l)}</div>
                       </td>
