@@ -3,9 +3,10 @@ import * as React from "react";
 import { useDB, api } from "@/lib/store";
 import { LEAD_STAGES, type LeadStage } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { TempBadge } from "@/components/StageBadge";
 import { LeadDrawer } from "@/components/LeadDrawer";
 import { LeadFormDialog } from "@/components/LeadFormDialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { StickyNote } from "lucide-react";
 
 export const Route = createFileRoute("/pipeline")({
   head: () => ({ meta: [{ title: "Pipeline — Cradlewell CRM" }] }),
@@ -56,7 +57,25 @@ function PipelinePage() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="font-medium leading-tight">{l.name}</div>
-                        <TempBadge temp={l.temperature} />
+                        {(l.notes || l.callNotes || l.whatsappNotes) && (
+                          <TooltipProvider delayDuration={100}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary"
+                                >
+                                  <StickyNote className="h-3 w-3" />
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs whitespace-pre-wrap text-xs">
+                                {[l.notes, l.callNotes && `Call: ${l.callNotes}`, l.whatsappNotes && `WA: ${l.whatsappNotes}`]
+                                  .filter(Boolean)
+                                  .join("\n")}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
                         {l.serviceRequired} · {l.city ?? "-"}
