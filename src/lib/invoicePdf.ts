@@ -38,6 +38,13 @@ export interface InvoicePdfOpts {
   adjustmentAmount: number;
   termsAndConditions?: string;
   fileName: string;
+  payment?: {
+    status: "paid" | "partial" | "unpaid";
+    amountPaid: number;
+    date?: Date;
+    mode?: string;
+    reference?: string;
+  };
 }
 
 const COMPANY = {
@@ -60,6 +67,8 @@ const CARD_BG: [number, number, number] = [255, 255, 255];
 const LINE: [number, number, number] = [228, 232, 240];      // thin divider
 const TEXT: [number, number, number] = [17, 24, 39];
 const SUB: [number, number, number] = [107, 114, 128];       // soft grey label
+const GREEN: [number, number, number] = [22, 163, 74];       // paid
+const AMBER: [number, number, number] = [202, 138, 4];       // partial
 
 function inr(n: number) {
   return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -152,6 +161,24 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   doc.setFontSize(24);
   doc.setTextColor(...TEXT);
   doc.text("TAX INVOICE", W - M, headerY + 8, { align: "right" });
+
+  // Paid / Partial pill
+  if (opts.payment && opts.payment.status !== "unpaid") {
+    const isPaid = opts.payment.status === "paid";
+    const label = isPaid ? "PAID" : "PARTIALLY PAID";
+    const color = isPaid ? GREEN : AMBER;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    const pillW = doc.getTextWidth(label) + 6;
+    const pillH = 5.4;
+    const pillX = W - M - pillW;
+    const pillY = headerY + 13.5;
+    doc.setFillColor(...color);
+    doc.roundedRect(pillX, pillY, pillW, pillH, 2.5, 2.5, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.text(label, pillX + pillW / 2, pillY + 3.7, { align: "center" });
+  }
+
   // Gradient mini underline
   for (let i = 0; i < 30; i++) {
     const t = i / 29;
@@ -317,7 +344,11 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
 
   const rowsH = rows.length * 6 + 6;
   const totalBarH = 12;
-  const cardH = rowsH + totalBarH + 4;
+  const paid = opts.payment?.amountPaid ?? 0;
+  const balance = Math.max(0, total - paid);
+  const showPayment = !!opts.payment && paid > 0;
+  const payRowsH = showPayment ? 14 : 0;
+  const cardH = rowsH + totalBarH + payRowsH + 4;
 
   doc.setFillColor(...SOFT_BG);
   doc.roundedRect(totX, totTop, totW, cardH, 2.5, 2.5, "F");
@@ -347,9 +378,29 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
-  doc.text("TOTAL PAYABLE", totX + 5, barY + 7.5);
+  const totalLabel = showPayment && balance === 0 ? "TOTAL (PAID)" : "TOTAL PAYABLE";
+  doc.text(totalLabel, totX + 5, barY + 7.5);
   doc.setFontSize(12);
   doc.text(`Rs. ${inr(total)}`, totX + totW - 5, barY + 8, { align: "right" });
+
+  // Amount Paid + Balance Due rows
+  if (showPayment) {
+    let py = barY + totalBarH + 5;
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...SUB);
+    doc.text("Amount Paid", totX + 5, py);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...GREEN);
+    doc.text(`- ${inr(paid)}`, totX + totW - 5, py, { align: "right" });
+    py += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...SUB);
+    doc.text("Balance Due", totX + 5, py);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(balance === 0 ? GREEN[0] : TEXT[0], balance === 0 ? GREEN[1] : TEXT[1], balance === 0 ? GREEN[2] : TEXT[2]);
+    doc.text(inr(balance), totX + totW - 5, py, { align: "right" });
+  }
 
   // Amount in words (left)
   doc.setFont("helvetica", "normal");
@@ -384,6 +435,21 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   doc.setDrawColor(...LINE);
   doc.setLineWidth(0.2);
   doc.line(M, H - 14, W - M, H - 14);
+
+  if (opts.payment && opts.payment.amountPaid > 0) {
+    const dateStr = opts.payment.date ? format(opts.payment.date, "dd MMM yyyy") : "";
+    const refStr = opts.payment.reference ? ` · Ref: ${opts.payment.reference}` : "";
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...GREEN);
+    doc.text(
+      `Payment of Rs. ${inr(opts.payment.amountPaid)} received${dateStr ? ` on ${dateStr}` : ""}${opts.payment.mode ? ` via ${opts.payment.mode}` : ""}${refStr}. Thank you.`,
+      W / 2,
+      H - 17,
+      { align: "center" }
+    );
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.setTextColor(...VIOLET);
