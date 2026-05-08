@@ -36,7 +36,7 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
     babyAgeOrMonth: "",
     area: "",
     city: "",
-    preferredShift: "Day (12h)" as Shift,
+    preferredShift: "Day" as unknown as Shift,
     budget: "",
     notes: "",
     owner: "Aarav",
