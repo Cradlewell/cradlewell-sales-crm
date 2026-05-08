@@ -13,6 +13,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as QuotationsRouteImport } from './routes/quotations'
 import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LeadsRouteImport } from './routes/leads'
+import { Route as InvoiceGeneratorRouteImport } from './routes/invoice-generator'
 import { Route as FollowupsRouteImport } from './routes/followups'
 import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as IndexRouteImport } from './routes/index'
@@ -37,6 +38,11 @@ const LeadsRoute = LeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoiceGeneratorRoute = InvoiceGeneratorRouteImport.update({
+  id: '/invoice-generator',
+  path: '/invoice-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FollowupsRoute = FollowupsRouteImport.update({
   id: '/followups',
   path: '/followups',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/followups': typeof FollowupsRoute
+  '/invoice-generator': typeof InvoiceGeneratorRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/followups': typeof FollowupsRoute
+  '/invoice-generator': typeof InvoiceGeneratorRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/followups': typeof FollowupsRoute
+  '/invoice-generator': typeof InvoiceGeneratorRoute
   '/leads': typeof LeadsRoute
   '/pipeline': typeof PipelineRoute
   '/quotations': typeof QuotationsRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/followups'
+    | '/invoice-generator'
     | '/leads'
     | '/pipeline'
     | '/quotations'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/followups'
+    | '/invoice-generator'
     | '/leads'
     | '/pipeline'
     | '/quotations'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/followups'
+    | '/invoice-generator'
     | '/leads'
     | '/pipeline'
     | '/quotations'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClosuresRoute: typeof ClosuresRoute
   FollowupsRoute: typeof FollowupsRoute
+  InvoiceGeneratorRoute: typeof InvoiceGeneratorRoute
   LeadsRoute: typeof LeadsRoute
   PipelineRoute: typeof PipelineRoute
   QuotationsRoute: typeof QuotationsRoute
@@ -151,6 +164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invoice-generator': {
+      id: '/invoice-generator'
+      path: '/invoice-generator'
+      fullPath: '/invoice-generator'
+      preLoaderRoute: typeof InvoiceGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/followups': {
       id: '/followups'
       path: '/followups'
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClosuresRoute: ClosuresRoute,
   FollowupsRoute: FollowupsRoute,
+  InvoiceGeneratorRoute: InvoiceGeneratorRoute,
   LeadsRoute: LeadsRoute,
   PipelineRoute: PipelineRoute,
   QuotationsRoute: QuotationsRoute,
@@ -187,3 +208,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
