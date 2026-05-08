@@ -75,15 +75,23 @@ function PipelinePage() {
                           </TooltipProvider>
                         )}
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="mt-2 flex flex-wrap gap-1">
                         {[
                           l.serviceRequired,
-                          l.preferredShift,
-                          l.shiftHoursCount ? `${l.shiftHoursCount}h` : null,
+                          l.preferredShift && l.shiftHoursCount
+                            ? `${l.preferredShift} (${l.shiftHoursCount}hrs)`
+                            : l.preferredShift || (l.shiftHoursCount ? `${l.shiftHoursCount}hrs` : null),
                           l.shiftTime,
                         ]
                           .filter(Boolean)
-                          .join(" · ")}
+                          .map((txt, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                            >
+                              {txt}
+                            </span>
+                          ))}
                       </div>
                     </Card>
                   ))}
