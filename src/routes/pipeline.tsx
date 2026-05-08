@@ -76,7 +76,14 @@ function PipelinePage() {
                         )}
                       </div>
                       <div className="mt-1 text-xs text-muted-foreground">
-                        {l.serviceRequired} · {l.city ?? "-"}
+                        {[
+                          l.serviceRequired,
+                          l.preferredShift,
+                          l.shiftHoursCount ? `${l.shiftHoursCount}h` : null,
+                          l.shiftTime,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     </Card>
                   ))}
