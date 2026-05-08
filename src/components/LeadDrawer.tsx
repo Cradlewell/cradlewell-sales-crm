@@ -89,6 +89,8 @@ export function LeadDrawer({
         phone: lead.phone ?? "",
         whatsapp: lead.whatsapp ?? "",
         source: lead.source ?? "",
+        leadDate: lead.leadDate ? String(lead.leadDate).slice(0, 16) : "",
+        babyStatus: lead.babyStatus ?? "",
         hospitalName: lead.hospitalName ?? "",
         babyBirthStageStatus: lead.babyBirthStageStatus ?? "",
         babyAge: lead.babyAge ?? lead.babyAgeOrMonth ?? "",
@@ -122,6 +124,9 @@ export function LeadDrawer({
       name: form.name,
       phone: form.phone,
       whatsapp: form.whatsapp || form.phone,
+      source: (form.source || lead.source) as never,
+      leadDate: form.leadDate ? new Date(form.leadDate).toISOString() : lead.leadDate,
+      babyStatus: (form.babyStatus || lead.babyStatus) as never,
       hospitalName: form.hospitalName || undefined,
       babyBirthStageStatus: form.babyBirthStageStatus || undefined,
       babyAge: form.babyAge || undefined,
@@ -240,14 +245,13 @@ export function LeadDrawer({
                 <EditField label="Name" editing={editing} value={form.name} display={lead.name} onChange={(v)=>setF("name",v)} />
                 <EditField label="Phone" editing={editing} value={form.phone} display={lead.phone} onChange={(v)=>setF("phone",v)} />
                 <EditField label="WhatsApp" editing={editing} value={form.whatsapp} display={lead.whatsapp} onChange={(v)=>setF("whatsapp",v)} />
-                <Info label="Source" value={lead.source} />
-                <Info label="Lead date" value={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy")} />
-                <Info label="Lead time" value={format(new Date(lead.leadDate ?? lead.createdAt), "p")} />
+                <EditField label="Source" editing={editing} value={form.source} display={lead.source} onChange={(v)=>setF("source",v)} />
+                <EditField label="Lead date & time" editing={editing} value={form.leadDate} display={format(new Date(lead.leadDate ?? lead.createdAt), "dd MMM yyyy, p")} type="datetime-local" onChange={(v)=>setF("leadDate",v)} />
                 <Info label="Lead day" value={format(new Date(lead.leadDate ?? lead.createdAt), "EEEE")} />
               </Section>
 
               <Section icon={<Baby className="h-4 w-4" />} title="Baby details">
-                <Info label="Status" value={lead.babyStatus} />
+                <EditField label="Status" editing={editing} value={form.babyStatus} display={lead.babyStatus} onChange={(v)=>setF("babyStatus",v)} />
                 <EditField label="Hospital" editing={editing} value={form.hospitalName} display={lead.hospitalName ?? "-"} icon={<Stethoscope className="h-3 w-3" />} onChange={(v)=>setF("hospitalName",v)} />
                 <EditField label="Birth stage / status" editing={editing} value={form.babyBirthStageStatus} display={lead.babyBirthStageStatus ?? "-"} onChange={(v)=>setF("babyBirthStageStatus",v)} />
                 <EditField label="Baby age" editing={editing} value={form.babyAge} display={lead.babyAge ?? lead.babyAgeOrMonth ?? "-"} onChange={(v)=>setF("babyAge",v)} />
@@ -276,22 +280,6 @@ export function LeadDrawer({
                   defaultValue={lead.notes}
                   onBlur={(e) => api.updateLead(lead.id, { notes: e.target.value })}
                 />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label className="text-xs">Call notes</Label>
-                  <Textarea
-                    defaultValue={lead.callNotes}
-                    onBlur={(e) => api.updateLead(lead.id, { callNotes: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">WhatsApp notes</Label>
-                  <Textarea
-                    defaultValue={lead.whatsappNotes}
-                    onBlur={(e) => api.updateLead(lead.id, { whatsappNotes: e.target.value })}
-                  />
-                </div>
               </div>
             </TabsContent>
 
