@@ -41,7 +41,6 @@ const DEFAULT_COLS: ColDef[] = [
     <>
       <div className="font-medium">{l.name}</div>
       <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-        <span>{l.id}</span>
         <StageBadge stage={l.stage as LeadStage} />
         {isUrgentNew(l) && (
           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
