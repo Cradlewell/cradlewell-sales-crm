@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import jsPDF from "jspdf";
 import type { Quotation, Lead } from "@/lib/types";
+import templateUrl from "@/assets/quotation-template.jpg";
 
 export const Route = createFileRoute("/quotations")({
   head: () => ({ meta: [{ title: "Quotations — Cradlewell CRM" }] }),
@@ -18,49 +19,91 @@ function QuotationsPage() {
   const db = useDB();
   const [openId, setOpenId] = React.useState<string | null>(null);
 
-  const downloadPdf = (q: Quotation, lead?: Lead) => {
-    const doc = new jsPDF();
-    const left = 14;
-    let y = 20;
-    doc.setFontSize(18);
-    doc.text("Cradlewell — Quotation", left, y);
-    y += 8;
-    doc.setFontSize(10);
-    doc.setTextColor(120);
-    doc.text(`Quotation ID: ${q.id}`, left, y);
-    y += 5;
-    doc.text(`Date: ${format(new Date(q.date), "PPP")}`, left, y);
-    y += 10;
-    doc.setTextColor(0);
-    doc.setFontSize(12);
-    doc.text("Lead Details", left, y); y += 6;
-    doc.setFontSize(10);
-    doc.text(`Name: ${lead?.name ?? "—"}`, left, y); y += 5;
-    doc.text(`Lead ID: ${lead?.id ?? "—"}`, left, y); y += 5;
-    doc.text(`Phone: ${lead?.phone ?? "—"}`, left, y); y += 5;
-    if (lead?.address || lead?.area || lead?.city) {
-      doc.text(`Address: ${lead?.address ?? [lead?.area, lead?.city].filter(Boolean).join(", ")}`, left, y);
-      y += 5;
+  const loadImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+
+  const downloadPdf = async (q: Quotation, lead?: Lead) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const W = 210;
+    const H = 297;
+    try {
+      const img = await loadImage(templateUrl);
+      doc.addImage(img, "JPEG", 0, 0, W, H);
+    } catch {
+      // fallback: continue without background
     }
-    y += 5;
-    doc.setFontSize(12);
-    doc.text("Package Details", left, y); y += 6;
+
+    const invoiceNo = `CW-INV-${q.id.slice(0, 6).toUpperCase()}`;
+    const invoiceDate = format(new Date(q.date), "dd MMM yyyy");
+    const dueDate = format(new Date(new Date(q.date).getTime() + 3 * 86400000), "dd MMM yyyy");
+
+    // Invoice meta row (positions tuned to template)
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(`Package: ${q.package}`, left, y); y += 5;
-    doc.text(`Shift Hours: ${q.shiftHours}`, left, y); y += 5;
-    if (q.notes) { doc.text(`Notes: ${q.notes}`, left, y); y += 5; }
-    y += 5;
-    doc.setFontSize(12);
-    doc.text("Pricing", left, y); y += 6;
+    doc.setTextColor(20);
+    doc.text(invoiceNo, 36, 86);
+    doc.text(invoiceDate, 96, 86);
+    doc.text(dueDate, 158, 86);
+
+    // Bill-to block (above the description table)
+    let y = 100;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("BILL TO", 18, y);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    doc.text(`Quoted Price: INR ${q.quotedPrice.toLocaleString()}`, left, y); y += 5;
-    doc.text(`Discount: INR ${q.discount.toLocaleString()}`, left, y); y += 5;
-    doc.setFontSize(13);
-    doc.text(`Final Price: INR ${q.finalPrice.toLocaleString()}`, left, y); y += 10;
-    doc.setFontSize(9);
-    doc.setTextColor(120);
-    doc.text("Thank you for choosing Cradlewell.", left, 285);
-    doc.save(`Quotation-${lead?.name?.replace(/\s+/g, "_") ?? q.id}.pdf`);
+    y += 6;
+    doc.text(lead?.name ?? "—", 18, y); y += 5;
+    doc.text(`Lead ID: ${lead?.id ?? "—"}`, 18, y); y += 5;
+    doc.text(`Phone: ${lead?.phone ?? "—"}`, 18, y); y += 5;
+    const addr = lead?.address ?? [lead?.area, lead?.city].filter(Boolean).join(", ");
+    if (addr) {
+      const lines = doc.splitTextToSize(`Address: ${addr}`, 110);
+      doc.text(lines, 18, y);
+      y += lines.length * 5;
+    }
+    if (lead?.hospitalName) { doc.text(`Hospital: ${lead.hospitalName}`, 18, y); y += 5; }
+    if (lead?.babyStatus) {
+      const bb = `Baby: ${lead.babyStatus}${lead.babyAge ? `, ${lead.babyAge}` : ""}${lead.currentWeight ? `, ${lead.currentWeight}` : ""}`;
+      doc.text(bb, 18, y); y += 5;
+    }
+
+    // Line item row (template row "1")
+    const rowY = 132;
+    const descLines = doc.splitTextToSize(
+      `${q.package} — ${lead?.serviceRequired ?? "Care Service"}\nShift: ${q.shiftHours}${lead?.shiftTime ? ` (${lead.shiftTime})` : ""}${lead?.careStartDate ? ` | Start: ${format(new Date(lead.careStartDate), "dd MMM yyyy")}` : ""}${lead?.serviceDays ? ` | ${lead.serviceDays} days` : ""}${q.notes ? `\n${q.notes}` : ""}`,
+      90,
+    );
+    doc.setFontSize(10);
+    doc.text(descLines, 36, rowY);
+    const qty = lead?.serviceDays ?? 1;
+    const unit = qty > 0 ? Math.round(q.quotedPrice / qty) : q.quotedPrice;
+    doc.text(`INR ${unit.toLocaleString("en-IN")}`, 130, rowY, { align: "right" });
+    doc.text(String(qty), 158, rowY, { align: "right" });
+    doc.text(`INR ${q.quotedPrice.toLocaleString("en-IN")}`, 192, rowY, { align: "right" });
+
+    // Totals block
+    let ty = rowY + 30;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Subtotal:", 140, ty);
+    doc.text(`INR ${q.quotedPrice.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+    ty += 6;
+    doc.text("Discount:", 140, ty);
+    doc.text(`- INR ${q.discount.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+    ty += 7;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("TOTAL:", 140, ty);
+    doc.text(`INR ${q.finalPrice.toLocaleString("en-IN")}`, 192, ty, { align: "right" });
+
+    doc.save(`Cradlewell-Quotation-${(lead?.name ?? q.id).replace(/\s+/g, "_")}.pdf`);
   };
 
   return (
@@ -99,7 +142,7 @@ function QuotationsPage() {
                   <td className="px-3 py-2 text-right font-semibold text-primary">₹{q.finalPrice.toLocaleString()}</td>
                   <td className="px-3 py-2 hidden md:table-cell">{format(new Date(q.date), "PP")}</td>
                   <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
-                    <Button size="sm" variant="outline" onClick={() => downloadPdf(q, lead)}>
+                    <Button size="sm" variant="outline" onClick={() => { void downloadPdf(q, lead); }}>
                       <Download className="h-4 w-4" /> PDF
                     </Button>
                   </td>
