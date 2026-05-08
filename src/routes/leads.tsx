@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useDB, api, isUrgentNew, isStale } from "@/lib/store";
-import { LEAD_STAGES, type LeadStage, type LeadTemperature } from "@/lib/types";
+import { LEAD_STAGES, type LeadStage } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StageBadge, TempBadge } from "@/components/StageBadge";
+import { StageBadge } from "@/components/StageBadge";
 import { LeadDrawer } from "@/components/LeadDrawer";
 import { LeadFormDialog } from "@/components/LeadFormDialog";
 import { Download, Search, Upload, AlertTriangle, Clock } from "lucide-react";
@@ -29,25 +29,20 @@ function LeadsPage() {
   const [q, setQ] = React.useState("");
   const [stage, setStage] = React.useState<string>("all");
   const [source, setSource] = React.useState<string>("all");
-  const [owner, setOwner] = React.useState<string>("all");
-  const [temp, setTemp] = React.useState<string>("all");
   const [openId, setOpenId] = React.useState<string | null>(null);
 
-  const owners = Array.from(new Set(db.leads.map((l) => l.owner)));
   const sources = Array.from(new Set(db.leads.map((l) => l.source)));
 
   const rows = db.leads.filter((l) => {
     if (q && !`${l.name} ${l.phone} ${l.id}`.toLowerCase().includes(q.toLowerCase())) return false;
     if (stage !== "all" && l.stage !== stage) return false;
     if (source !== "all" && l.source !== source) return false;
-    if (owner !== "all" && l.owner !== owner) return false;
-    if (temp !== "all" && l.temperature !== temp) return false;
     return true;
   });
 
   const exportCSV = () => {
     const headers = [
-      "id","name","phone","whatsapp","source","stage","temperature","owner",
+      "id","name","phone","whatsapp","source","stage",
       "serviceRequired","babyStatus","hospitalName","babyBirthStageStatus",
       "babyAge","babyAgeOrMonth","currentWeight","area","city","address",
       "preferredShift","shiftHoursCount","shiftTime","careStartDate","serviceDays",
@@ -137,8 +132,6 @@ function LeadsPage() {
           </div>
           <Filter value={stage} setValue={setStage} placeholder="Stage" options={["all", ...LEAD_STAGES]} />
           <Filter value={source} setValue={setSource} placeholder="Source" options={["all", ...sources]} />
-          <Filter value={owner} setValue={setOwner} placeholder="Owner" options={["all", ...owners]} />
-          <Filter value={temp} setValue={setTemp} placeholder="Temp" options={["all", "Hot", "Warm", "Cold"]} />
         </div>
       </Card>
 
@@ -180,7 +173,6 @@ function LeadsPage() {
                       <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
                         <span>{l.id}</span>
                         <StageBadge stage={l.stage as LeadStage} />
-                        <TempBadge temp={l.temperature as LeadTemperature} />
                         {isUrgentNew(l) && (
                           <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
                             <AlertTriangle className="h-3 w-3" /> Urgent

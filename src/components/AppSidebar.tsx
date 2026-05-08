@@ -5,7 +5,6 @@ import {
   Kanban,
   CalendarClock,
   FileText,
-  Trophy,
   BarChart3,
   Sparkles,
 } from "lucide-react";
@@ -27,7 +26,6 @@ const items = [
   { title: "Pipeline", url: "/pipeline", icon: Kanban },
   { title: "Follow-ups", url: "/followups", icon: CalendarClock },
   { title: "Quotations", url: "/quotations", icon: FileText },
-  { title: "Closures", url: "/closures", icon: Trophy },
   { title: "Reports", url: "/reports", icon: BarChart3 },
 ];
 
