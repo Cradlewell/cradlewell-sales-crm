@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
-import logoUrl from "@/assets/cradlewell-logo.jpg";
+import logoUrl from "@/assets/cradlewell-logo.png";
 
 export interface InvoiceItem {
   description: string;
@@ -127,7 +127,7 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   const headerY = 14;
   try {
     const logo = await loadImage(logoUrl);
-    doc.addImage(logo, "JPEG", M, headerY, 18, 18);
+    doc.addImage(logo, "PNG", M, headerY, 18, 18);
   } catch { /* ignore */ }
 
   doc.setFont("helvetica", "bold");
