@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useDB, api, isUrgentNew, isStale } from "@/lib/store";
-import { LEAD_STAGES, type LeadStage } from "@/lib/types";
+import { LEAD_STAGES, type Lead, type LeadStage } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import {
 import { StageBadge } from "@/components/StageBadge";
 import { LeadDrawer } from "@/components/LeadDrawer";
 import { LeadFormDialog } from "@/components/LeadFormDialog";
-import { Download, Search, Upload, AlertTriangle, Clock } from "lucide-react";
+import { Download, Search, Upload, AlertTriangle, Clock, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -24,12 +24,131 @@ export const Route = createFileRoute("/leads")({
   component: LeadsPage,
 });
 
+type ColKey =
+  | "name" | "phone" | "leadDate" | "leadTime" | "leadDay" | "service"
+  | "bornExpecting" | "hospital" | "birthStage" | "babyAge" | "currentWeight"
+  | "address" | "shiftType" | "shiftHours" | "shiftTime" | "careStart" | "serviceDays";
+
+type ColDef = {
+  key: ColKey;
+  label: string;
+  width: number;
+  render: (l: Lead) => React.ReactNode;
+};
+
+const DEFAULT_COLS: ColDef[] = [
+  { key: "name", label: "Name", width: 240, render: (l) => (
+    <>
+      <div className="font-medium">{l.name}</div>
+      <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <span>{l.id}</span>
+        <StageBadge stage={l.stage as LeadStage} />
+        {isUrgentNew(l) && (
+          <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+            <AlertTriangle className="h-3 w-3" /> Urgent
+          </span>
+        )}
+        {isStale(l) && (
+          <span className="inline-flex items-center gap-1 rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium">
+            <Clock className="h-3 w-3" /> Stale
+          </span>
+        )}
+      </div>
+    </>
+  )},
+  { key: "phone", label: "Phone number", width: 160, render: (l) => l.phone },
+  { key: "leadDate", label: "Lead date", width: 130, render: (l) => format(new Date(l.leadDate ?? l.createdAt), "dd MMM yyyy") },
+  { key: "leadTime", label: "Lead time", width: 110, render: (l) => format(new Date(l.leadDate ?? l.createdAt), "p") },
+  { key: "leadDay", label: "Lead day", width: 110, render: (l) => format(new Date(l.leadDate ?? l.createdAt), "EEEE") },
+  { key: "service", label: "Service", width: 140, render: (l) => l.serviceRequired },
+  { key: "bornExpecting", label: "Born / Expecting", width: 140, render: (l) => l.babyStatus },
+  { key: "hospital", label: "Hospital", width: 160, render: (l) => l.hospitalName ?? "-" },
+  { key: "birthStage", label: "Birth stage / status", width: 170, render: (l) => l.babyBirthStageStatus ?? "-" },
+  { key: "babyAge", label: "Baby age", width: 110, render: (l) => l.babyAge ?? l.babyAgeOrMonth ?? "-" },
+  { key: "currentWeight", label: "Current weight", width: 130, render: (l) => l.currentWeight ?? "-" },
+  { key: "address", label: "Address", width: 220, render: (l) => l.address || [l.area, l.city].filter(Boolean).join(", ") || "-" },
+  { key: "shiftType", label: "Shift type", width: 130, render: (l) => l.preferredShift ?? "-" },
+  { key: "shiftHours", label: "Shift hours", width: 110, render: (l) => l.shiftHoursCount ? `${l.shiftHoursCount}h` : "-" },
+  { key: "shiftTime", label: "Shift time", width: 130, render: (l) => l.shiftTime ?? "-" },
+  { key: "careStart", label: "Care start date", width: 140, render: (l) => l.careStartDate ? format(new Date(l.careStartDate), "dd MMM yyyy") : "-" },
+  { key: "serviceDays", label: "Service days", width: 120, render: (l) => l.serviceDays ?? "-" },
+];
+
+const COL_PREFS_KEY = "cradlewell-leads-cols-v1";
+
+function loadColPrefs(): { order: ColKey[]; widths: Partial<Record<ColKey, number>> } {
+  if (typeof window === "undefined") return { order: DEFAULT_COLS.map((c) => c.key), widths: {} };
+  try {
+    const raw = localStorage.getItem(COL_PREFS_KEY);
+    if (!raw) return { order: DEFAULT_COLS.map((c) => c.key), widths: {} };
+    const p = JSON.parse(raw);
+    const valid = new Set(DEFAULT_COLS.map((c) => c.key));
+    const order = (p.order as ColKey[]).filter((k) => valid.has(k));
+    DEFAULT_COLS.forEach((c) => { if (!order.includes(c.key)) order.push(c.key); });
+    // Always keep "name" first (frozen)
+    const filtered = order.filter((k) => k !== "name");
+    return { order: ["name", ...filtered], widths: p.widths ?? {} };
+  } catch {
+    return { order: DEFAULT_COLS.map((c) => c.key), widths: {} };
+  }
+}
+
 function LeadsPage() {
   const db = useDB();
   const [q, setQ] = React.useState("");
   const [stage, setStage] = React.useState<string>("all");
   const [source, setSource] = React.useState<string>("all");
   const [openId, setOpenId] = React.useState<string | null>(null);
+
+  const [{ order, widths }, setPrefs] = React.useState(() => loadColPrefs());
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(COL_PREFS_KEY, JSON.stringify({ order, widths }));
+    }
+  }, [order, widths]);
+
+  const colMap = React.useMemo(() => {
+    const m = new Map<ColKey, ColDef>();
+    DEFAULT_COLS.forEach((c) => m.set(c.key, c));
+    return m;
+  }, []);
+  const cols = order.map((k) => {
+    const c = colMap.get(k)!;
+    return { ...c, width: widths[k] ?? c.width };
+  });
+
+  const dragKey = React.useRef<ColKey | null>(null);
+  const onDragStart = (k: ColKey) => { dragKey.current = k; };
+  const onDrop = (target: ColKey) => {
+    const src = dragKey.current;
+    dragKey.current = null;
+    if (!src || src === target || src === "name" || target === "name") return;
+    setPrefs((p) => {
+      const next = p.order.filter((k) => k !== src);
+      const idx = next.indexOf(target);
+      next.splice(idx, 0, src);
+      return { ...p, order: next };
+    });
+  };
+
+  const startResize = (k: ColKey, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startW = widths[k] ?? colMap.get(k)!.width;
+    const onMove = (ev: MouseEvent) => {
+      const w = Math.max(70, startW + (ev.clientX - startX));
+      setPrefs((p) => ({ ...p, widths: { ...p.widths, [k]: w } }));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
+
+  const resetCols = () => setPrefs({ order: DEFAULT_COLS.map((c) => c.key), widths: {} });
 
   const sources = Array.from(new Set(db.leads.map((l) => l.source)));
 
@@ -120,6 +239,7 @@ function LeadsPage() {
               <span><Upload className="mr-1 h-4 w-4" /> Import CSV</span>
             </Button>
           </label>
+          <Button variant="ghost" onClick={resetCols}>Reset columns</Button>
           <LeadFormDialog />
         </div>
       </div>
@@ -137,79 +257,57 @@ function LeadsPage() {
 
       <Card className="overflow-hidden p-0">
         <div className="max-h-[68vh] overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-10 bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+          <table className="text-sm border-separate border-spacing-0" style={{ width: cols.reduce((a, c) => a + c.width, 0) }}>
+            <thead className="text-left text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-3 py-2">Name</th>
-                <th className="px-3 py-2">Phone number</th>
-                <th className="px-3 py-2 hidden md:table-cell">Lead date</th>
-                <th className="px-3 py-2 hidden md:table-cell">Lead time</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Lead day</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Service</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Born / Expecting</th>
-                <th className="px-3 py-2 hidden lg:table-cell">Hospital</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Birth stage / status</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Baby age</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Current weight</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Address</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Shift type</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Shift hours</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Shift time</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Care start date</th>
-                <th className="px-3 py-2 hidden xl:table-cell">Service days</th>
+                {cols.map((c) => {
+                  const isName = c.key === "name";
+                  return (
+                    <th
+                      key={c.key}
+                      style={{ width: c.width, minWidth: c.width, ...(isName ? { left: 0, position: "sticky", zIndex: 30 } : {}) }}
+                      className={`group relative px-3 py-2 bg-muted/60 border-b ${isName ? "shadow-[2px_0_0_0_hsl(var(--border))]" : ""} sticky top-0`}
+                      draggable={!isName}
+                      onDragStart={() => onDragStart(c.key)}
+                      onDragOver={(e) => { if (!isName) e.preventDefault(); }}
+                      onDrop={() => onDrop(c.key)}
+                    >
+                      <div className="flex items-center gap-1">
+                        {!isName && <GripVertical className="h-3 w-3 cursor-grab text-muted-foreground/60" />}
+                        <span className="truncate">{c.label}</span>
+                      </div>
+                      <span
+                        onMouseDown={(e) => startResize(c.key, e)}
+                        className="absolute right-0 top-0 h-full w-1 cursor-col-resize select-none bg-transparent hover:bg-primary/40"
+                      />
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
-              {rows.map((l) => {
-                const ld = new Date(l.leadDate ?? l.createdAt);
-                return (
-                  <tr
-                    key={l.id}
-                    onClick={() => setOpenId(l.id)}
-                    className="cursor-pointer border-t hover:bg-muted/30"
-                  >
-                    <td className="px-3 py-2">
-                      <div className="font-medium">{l.name}</div>
-                      <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-                        <span>{l.id}</span>
-                        <StageBadge stage={l.stage as LeadStage} />
-                        {isUrgentNew(l) && (
-                          <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                            <AlertTriangle className="h-3 w-3" /> Urgent
-                          </span>
-                        )}
-                        {isStale(l) && (
-                          <span className="inline-flex items-center gap-1 rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium">
-                            <Clock className="h-3 w-3" /> Stale
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">{l.phone}</td>
-                    <td className="px-3 py-2 hidden md:table-cell whitespace-nowrap">{format(ld, "dd MMM yyyy")}</td>
-                    <td className="px-3 py-2 hidden md:table-cell whitespace-nowrap">{format(ld, "p")}</td>
-                    <td className="px-3 py-2 hidden lg:table-cell">{format(ld, "EEEE")}</td>
-                    <td className="px-3 py-2 hidden lg:table-cell">{l.serviceRequired}</td>
-                    <td className="px-3 py-2 hidden lg:table-cell">{l.babyStatus}</td>
-                    <td className="px-3 py-2 hidden lg:table-cell">{l.hospitalName ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.babyBirthStageStatus ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.babyAge ?? l.babyAgeOrMonth ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.currentWeight ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell max-w-[220px] truncate">
-                      {l.address || [l.area, l.city].filter(Boolean).join(", ") || "-"}
-                    </td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.preferredShift ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.shiftHoursCount ? `${l.shiftHoursCount}h` : "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell whitespace-nowrap">{l.shiftTime ?? "-"}</td>
-                    <td className="px-3 py-2 hidden xl:table-cell whitespace-nowrap">
-                      {l.careStartDate ? format(new Date(l.careStartDate), "dd MMM yyyy") : "-"}
-                    </td>
-                    <td className="px-3 py-2 hidden xl:table-cell">{l.serviceDays ?? "-"}</td>
-                  </tr>
-                );
-              })}
+              {rows.map((l) => (
+                <tr
+                  key={l.id}
+                  onClick={() => setOpenId(l.id)}
+                  className="group cursor-pointer hover:bg-muted/30"
+                >
+                  {cols.map((c) => {
+                    const isName = c.key === "name";
+                    return (
+                      <td
+                        key={c.key}
+                        style={{ width: c.width, minWidth: c.width, ...(isName ? { left: 0, position: "sticky", zIndex: 10 } : {}) }}
+                        className={`px-3 py-2 align-top border-b bg-background group-hover:bg-muted/30 ${isName ? "shadow-[2px_0_0_0_hsl(var(--border))]" : "whitespace-nowrap"}`}
+                      >
+                        <div className={isName ? "" : "truncate"}>{c.render(l)}</div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
               {rows.length === 0 && (
-                <tr><td colSpan={17} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
+                <tr><td colSpan={cols.length} className="px-3 py-8 text-center text-sm text-muted-foreground">No leads match the filters.</td></tr>
               )}
             </tbody>
           </table>
