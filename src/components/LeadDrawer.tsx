@@ -163,8 +163,7 @@ export function LeadDrawer({
                 </div>
                 <div>
                   <div className="flex items-center gap-2 text-[11px] opacity-80">
-                    <span className="rounded bg-white/15 px-1.5 py-0.5 font-medium tracking-wide">{lead.id}</span>
-                    <span>· {lead.source}</span>
+                    <span>{lead.source}</span>
                   </div>
                   <div className="mt-1 text-xl font-semibold leading-tight">{lead.name}</div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs opacity-95">
