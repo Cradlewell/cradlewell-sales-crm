@@ -447,6 +447,39 @@ function Info({
   );
 }
 
+function EditField({
+  label,
+  editing,
+  value,
+  display,
+  onChange,
+  icon,
+  full,
+  type = "text",
+}: {
+  label: string;
+  editing: boolean;
+  value: string;
+  display: React.ReactNode;
+  onChange: (v: string) => void;
+  icon?: React.ReactNode;
+  full?: boolean;
+  type?: string;
+}) {
+  if (!editing) return <Info label={label} value={display} icon={icon} full={full} />;
+  return (
+    <div className={full ? "sm:col-span-2" : undefined}>
+      <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
+      <Input
+        className="mt-1 h-8"
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
 function Section({
   icon,
   title,
