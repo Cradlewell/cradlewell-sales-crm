@@ -142,7 +142,7 @@ function QuotationsPage() {
                   <td className="px-3 py-2 text-right font-semibold text-primary">₹{q.finalPrice.toLocaleString()}</td>
                   <td className="px-3 py-2 hidden md:table-cell">{format(new Date(q.date), "PP")}</td>
                   <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}>
-                    <Button size="sm" variant="outline" onClick={() => downloadPdf(q, lead)}>
+                    <Button size="sm" variant="outline" onClick={() => { void downloadPdf(q, lead); }}>
                       <Download className="h-4 w-4" /> PDF
                     </Button>
                   </td>
