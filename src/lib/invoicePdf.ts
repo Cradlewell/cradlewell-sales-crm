@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
+import logoUrl from "@/assets/cradlewell-logo.jpg";
 
 export interface InvoiceItem {
   description: string;
@@ -91,6 +92,19 @@ function addrLines(a: Address): string[] {
   if (a.country) lines.push(a.country);
   if (a.phone) lines.push("Phone: " + a.phone);
   return lines;
+}
+
+type Align = "left" | "center" | "right";
+interface Col { x: number; w: number; align: Align }
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
 }
 
 export async function renderInvoicePdf(opts: InvoicePdfOpts) {
