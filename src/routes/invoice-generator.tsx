@@ -53,6 +53,12 @@ function InvoiceGeneratorPage() {
 
   const [tnc, setTnc] = React.useState<string>(DEFAULT_TERMS);
 
+  const [paymentStatus, setPaymentStatus] = React.useState<"unpaid" | "partial" | "paid">("unpaid");
+  const [amountPaid, setAmountPaid] = React.useState<number>(0);
+  const [paymentDate, setPaymentDate] = React.useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [paymentMode, setPaymentMode] = React.useState<string>("UPI");
+  const [paymentRef, setPaymentRef] = React.useState<string>("");
+
   const customer = db.leads.find((l) => l.id === customerId);
 
   React.useEffect(() => {
@@ -116,6 +122,15 @@ function InvoiceGeneratorPage() {
       adjustmentLabel,
       adjustmentAmount,
       termsAndConditions: tnc,
+      payment: paymentStatus === "unpaid" && amountPaid <= 0
+        ? undefined
+        : {
+            status: paymentStatus,
+            amountPaid: paymentStatus === "paid" ? total : amountPaid,
+            date: new Date(paymentDate),
+            mode: paymentMode,
+            reference: paymentRef,
+          },
       fileName: `Cradlewell-Invoice-${customerName.replace(/\s+/g, "_") || invoiceNo}.pdf`,
     });
   };
@@ -286,6 +301,42 @@ function InvoiceGeneratorPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
+        <Card className="space-y-2 p-4 md:col-span-2">
+          <Label className="text-xs font-medium">Payment Details</Label>
+          <div className="grid gap-3 md:grid-cols-5">
+            <Select value={paymentStatus} onValueChange={(v) => {
+              const s = v as "unpaid" | "partial" | "paid";
+              setPaymentStatus(s);
+              if (s === "paid") setAmountPaid(total);
+              if (s === "unpaid") setAmountPaid(0);
+            }}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unpaid">Unpaid</SelectItem>
+                <SelectItem value="partial">Partially Paid</SelectItem>
+                <SelectItem value="paid">Paid in Full</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              type="number"
+              min={0}
+              placeholder="Amount paid"
+              value={paymentStatus === "paid" ? total : amountPaid}
+              disabled={paymentStatus !== "partial"}
+              onChange={(e) => setAmountPaid(Number(e.target.value))}
+            />
+            <Input type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} disabled={paymentStatus === "unpaid"} />
+            <Select value={paymentMode} onValueChange={setPaymentMode}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["UPI", "Bank Transfer", "Cash", "Card", "Cheque"].map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input placeholder="Reference / Txn ID" value={paymentRef} onChange={(e) => setPaymentRef(e.target.value)} disabled={paymentStatus === "unpaid"} />
+          </div>
+        </Card>
         <Card className="space-y-2 p-4 md:col-span-2">
           <Label className="text-xs font-medium">Terms &amp; Conditions</Label>
           <Textarea rows={6} value={tnc} onChange={(e) => setTnc(e.target.value)} />
