@@ -87,8 +87,7 @@ function InvoiceGeneratorPage() {
       }
       return prev;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customerId]);
+  }, [customerId, customer]);
 
   const subTotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
   const cgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.cgstPct) / 100, 0);

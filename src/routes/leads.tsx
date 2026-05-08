@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { useDB, api, isUrgentNew, isStale } from "@/lib/store";
-import { LEAD_STAGES, type Lead, type LeadStage } from "@/lib/types";
+import { LEAD_STAGES, type Lead, type LeadStage, type LeadSource, type BabyStatus, type LeadTemperature } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -166,9 +166,13 @@ function LeadsPage() {
       "preferredShift","shiftHoursCount","shiftTime","careStartDate","serviceDays",
       "budget","leadDate","createdAt",
     ];
+    const escape = (v: unknown) => {
+      const s = String(v ?? "");
+      return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+    };
     const csv = [
       headers.join(","),
-      ...rows.map((l) => headers.map((h) => JSON.stringify((l as never as Record<string, unknown>)[h] ?? "")).join(",")),
+      ...rows.map((l) => headers.map((h) => escape((l as Record<string, unknown>)[h])).join(",")),
     ].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -200,18 +204,18 @@ function LeadsPage() {
           name: r.name || "Unknown",
           phone: r.phone || "",
           whatsapp: r.whatsapp || r.phone || "",
-          source: (r.source as never) || "Other",
+          source: (r.source as LeadSource) || "Other",
           leadDate: r.createdAt || now,
           serviceRequired: r.serviceRequired || "Newborn Care",
-          babyStatus: (r.babyStatus as never) || "Born",
+          babyStatus: (r.babyStatus as BabyStatus) || "Born",
           owner: r.owner || "Aarav",
-          stage: (r.stage as never) || "New Lead",
-          temperature: (r.temperature as never) || "Warm",
+          stage: (r.stage as LeadStage) || "New Lead",
+          temperature: (r.temperature as LeadTemperature) || "Warm",
           createdAt: r.createdAt || now,
           lastActivityAt: now,
           closureProbability: 20,
         }));
-        api.importLeads(leads as never);
+        api.importLeads(leads);
         toast.success(`Imported ${leads.length} leads`);
       } catch {
         toast.error("Failed to parse CSV");

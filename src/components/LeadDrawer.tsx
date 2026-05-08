@@ -25,9 +25,12 @@ import {
 import { api, isOverdue, useDB } from "@/lib/store";
 import {
   LEAD_STAGES,
+  type BabyStatus,
   type FollowupType,
+  type LeadSource,
   type LeadTemperature,
   type LostReason,
+  type Shift,
 } from "@/lib/types";
 import { StageBadge, TempBadge } from "./StageBadge";
 import { toast } from "sonner";
@@ -124,15 +127,15 @@ export function LeadDrawer({
       name: form.name,
       phone: form.phone,
       whatsapp: form.whatsapp || form.phone,
-      source: (form.source || lead.source) as never,
+      source: (form.source || lead.source) as LeadSource,
       leadDate: form.leadDate ? new Date(form.leadDate).toISOString() : lead.leadDate,
-      babyStatus: (form.babyStatus || lead.babyStatus) as never,
+      babyStatus: (form.babyStatus || lead.babyStatus) as BabyStatus,
       hospitalName: form.hospitalName || undefined,
       babyBirthStageStatus: form.babyBirthStageStatus || undefined,
       babyAge: form.babyAge || undefined,
       currentWeight: form.currentWeight || undefined,
       serviceRequired: form.serviceRequired,
-      preferredShift: (form.preferredShift || undefined) as never,
+      preferredShift: (form.preferredShift || undefined) as Shift | undefined,
       shiftHoursCount: form.shiftHoursCount ? Number(form.shiftHoursCount) : undefined,
       shiftTime: form.shiftTime || undefined,
       careStartDate: form.careStartDate || undefined,
@@ -141,7 +144,7 @@ export function LeadDrawer({
       area: form.area || undefined,
       city: form.city || undefined,
       address: form.address || undefined,
-    } as never);
+    });
     setEditing(false);
     toast.success("Lead updated");
   };
