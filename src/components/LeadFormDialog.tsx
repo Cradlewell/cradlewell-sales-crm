@@ -30,7 +30,7 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
     phone: "",
     whatsapp: "",
     source: "Website" as LeadSource,
-    serviceRequired: "Newborn Care",
+    serviceRequired: "Nurse Care",
     babyStatus: "Born" as BabyStatus,
     hospitalName: "",
     babyAgeOrMonth: "",
@@ -137,7 +137,7 @@ export function LeadFormDialog({ trigger }: { trigger?: React.ReactNode }) {
             <Select value={form.serviceRequired} onValueChange={(v) => set("serviceRequired", v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["Newborn Care","Postnatal Care","Lactation Support","Night Nanny"].map(s=>(
+                {["Nurse Care","Moba Care"].map(s=>(
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
               </SelectContent>
