@@ -6,7 +6,8 @@ export interface InvoiceItem {
   description: string;
   qty: number;
   rate: number;
-  taxPct: number;
+  cgstPct: number;
+  sgstPct: number;
 }
 
 export interface Address {
@@ -259,8 +260,8 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
   let subTotal = 0, cgstTotal = 0, sgstTotal = 0;
   opts.items.forEach((it, idx) => {
     const amt = it.qty * it.rate;
-    const cgstA = (amt * it.taxPct) / 100;
-    const sgstA = (amt * it.taxPct) / 100;
+    const cgstA = (amt * it.cgstPct) / 100;
+    const sgstA = (amt * it.sgstPct) / 100;
     subTotal += amt; cgstTotal += cgstA; sgstTotal += sgstA;
     const dl = doc.splitTextToSize(it.description || "—", cx.desc.w - 2);
     const cell = (col: Col, txt: string | string[], color: [number, number, number] = TEXT) => {
@@ -272,10 +273,10 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     cell(cx.desc,  dl,              BLUE);
     cell(cx.qty,   String(it.qty));
     cell(cx.rate,  inr(it.rate));
-    cell(cx.cgstP, it.taxPct ? `${it.taxPct}%` : "-", BLUE);
-    cell(cx.cgstA, it.taxPct ? inr(cgstA) : "-");
-    cell(cx.sgstP, it.taxPct ? `${it.taxPct}%` : "-", BLUE);
-    cell(cx.sgstA, it.taxPct ? inr(sgstA) : "-");
+    cell(cx.cgstP, it.cgstPct ? `${it.cgstPct}%` : "-", BLUE);
+    cell(cx.cgstA, it.cgstPct ? inr(cgstA) : "-");
+    cell(cx.sgstP, it.sgstPct ? `${it.sgstPct}%` : "-", BLUE);
+    cell(cx.sgstA, it.sgstPct ? inr(sgstA) : "-");
     cell(cx.amt,   inr(amt));
     ry += Math.max(dl.length * 4, 6) + 2;
   });
@@ -300,8 +301,8 @@ export async function renderInvoicePdf(opts: InvoicePdfOpts) {
     sty += 5.5;
   };
   totRow("Sub Total", inr(subTotal));
-  if (cgstTotal > 0) totRow(`CGST${opts.items[0]?.taxPct ? `${opts.items[0].taxPct} (${opts.items[0].taxPct}%)` : ""}`, inr(cgstTotal));
-  if (sgstTotal > 0) totRow(`SGST${opts.items[0]?.taxPct ? `${opts.items[0].taxPct} (${opts.items[0].taxPct}%)` : ""}`, inr(sgstTotal));
+  if (cgstTotal > 0) totRow(`CGST${opts.items[0]?.cgstPct ? ` (${opts.items[0].cgstPct}%)` : ""}`, inr(cgstTotal));
+  if (sgstTotal > 0) totRow(`SGST${opts.items[0]?.sgstPct ? ` (${opts.items[0].sgstPct}%)` : ""}`, inr(sgstTotal));
   if (discountAmt > 0) totRow(`Discount${opts.discountIsPct ? ` (${opts.discountValue}%)` : ""}`, "- " + inr(discountAmt));
   if (opts.tdsTcsAmount > 0) totRow(opts.tdsTcsLabel ?? "TDS", "- " + inr(opts.tdsTcsAmount));
   if (opts.adjustmentAmount !== 0) totRow(opts.adjustmentLabel || "Adjustment", inr(opts.adjustmentAmount));
