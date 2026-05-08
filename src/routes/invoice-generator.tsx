@@ -44,7 +44,7 @@ function InvoiceGeneratorPage() {
   const [placeOfSupply, setPlaceOfSupply] = React.useState("Karnataka (29)");
 
   const [items, setItems] = React.useState<InvoiceItem[]>([
-    { description: "30 days Nurse care", qty: 1, rate: 4000, taxPct: 9 },
+    { description: "30 days Nurse care", qty: 1, rate: 4000, cgstPct: 9, sgstPct: 9 },
   ]);
 
   const [discount, setDiscount] = React.useState<number>(0);
@@ -79,7 +79,8 @@ function InvoiceGeneratorPage() {
           description: `${customer.serviceRequired ?? "Care Service"}${customer.preferredShift ? ` — ${customer.preferredShift}` : ""}${customer.serviceDays ? ` | ${customer.serviceDays} days` : ""}`,
           qty: customer.serviceDays ?? 1,
           rate: customer.budget ?? 0,
-          taxPct: 9,
+          cgstPct: 9,
+          sgstPct: 9,
         }];
       }
       return prev;
@@ -88,8 +89,8 @@ function InvoiceGeneratorPage() {
   }, [customerId]);
 
   const subTotal = items.reduce((s, i) => s + i.qty * i.rate, 0);
-  const cgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.taxPct) / 100, 0);
-  const sgstTotal = cgstTotal;
+  const cgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.cgstPct) / 100, 0);
+  const sgstTotal = items.reduce((s, i) => s + (i.qty * i.rate * i.sgstPct) / 100, 0);
   const discountAmt = discountIsPct ? (subTotal * discount) / 100 : discount;
   const total = Math.max(0, subTotal + cgstTotal + sgstTotal - discountAmt - tdsAmount + adjustmentAmount);
 
